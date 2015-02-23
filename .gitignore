@@ -1,0 +1,17 @@
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.lhs.tex
+*.out
+*.run.xml
+*.backup
+*.toc
+build/
+
+*.pdf
+*.tex
+*.kilepr

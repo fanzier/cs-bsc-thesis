@@ -1,0 +1,48 @@
+%include polycode.fmt
+%include greek.fmt
+%include forall.fmt
+
+
+%format failed = "\mathbf{failed}"
+%format unknown = "\mathbf{unknown}"
+%format free = "\mathbf{free}"
+
+%format <: = "_{"
+%format :> = "}"
+
+
+
+
+%format |-> = "\mapsto"
+%format `evaluatesTo` = "\Downarrow"
+%format `evaluatesTo'` = "\Downarrow ^*"
+%format / = "/"
+
+
+\let\Conid\mathsf
+
+%format eps = " "
+%format .. = "\dots"
+%format (vec (a)) = "\overline{" a "}"
+
+
+
+
+%format Context (a) = a "\mbox{~context}"
+%format emptycontext = "\emptyset"
+%format isType (a) = a "\in\mathsf{Type}"
+%format isData (a) = a "\in\mathsf{Data}"
+
+%format |- = "\vdash"
+ 
+%format tau'
+%format tau_1
+%format tau_2
+%format tau_n
+
+%format x_1
+%format x_2
+%format x_n
+
+%format (set (x)) = "\{" x "\}"
+%format (tytrans (ty)) = "\tytrans{" ty "}"
