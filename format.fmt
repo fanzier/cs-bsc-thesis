@@ -34,15 +34,40 @@
 %format isData (a) = a "\in\mathsf{Data}"
 
 %format |- = "\vdash"
- 
+
+%format alpha_1
+%format alpha_2
+%format alpha_m
+
 %format tau'
 %format tau_1
 %format tau_2
 %format tau_n
+%format tau_l
+%format tau_11
+%format tau_12
+%format tau_21
+%format tau_22
 
 %format x_1
 %format x_2
 %format x_n
+%format x_l
+
+%format e_1
+%format e_2
+%format e_n
+
+%format p_1
+%format p_2
+%format p_n
+
+%format C_1
+%format C_2
 
 %format (set (x)) = "\{" x "\}"
+%format (Set (ty)) = "\{" ty "\}"
+%format (List (ty)) = "[" ty "]"
+%format (Pair a b) = "(" a "," b ")"
+%format (trans (e)) = "\trans{" e "}"
 %format (tytrans (ty)) = "\tytrans{" ty "}"
