@@ -27,6 +27,10 @@
 
 %include commands.lhs
 
+%Configuration:
+
+\allowdisplaybreaks[1]
+
 \title{
   Implementing an Operational Semantics and
   Nondeterminism Analysis for a Functional-Logic Language
