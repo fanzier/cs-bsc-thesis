@@ -65,7 +65,7 @@ Most of the time,
 the data declarations will contain no function types
 and the translation look the same.
 
-\subsection{Translating expessions}
+\subsection{Translating expressions}
 
 How \cumin{} expressions are translated can be seen below.
 |trans| denotes the conversion function.
