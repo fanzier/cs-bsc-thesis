@@ -9,17 +9,15 @@
 
 %format <: = "_{"
 %format :> = "}"
+%format </ = "^{"
+%format /> = "}"
 
 
-
-
-%format |-> = "\mapsto"
-%format `evaluatesTo` = "\Downarrow"
-%format `evaluatesTo'` = "\Downarrow ^*"
+%format /-> = "\mapsto"
+%format ~> = "\Downarrow"
+%format ~>* = "\Downarrow ^*"
+%format ~>! = "\Downarrow^!"
 %format / = "/"
-
-
-\let\Conid\mathsf
 
 %format eps = " "
 %format .. = "\dots"
@@ -38,6 +36,7 @@
 %format alpha_1
 %format alpha_2
 %format alpha_m
+%format alpha_i
 
 %format tau'
 %format tau_1
@@ -48,15 +47,35 @@
 %format tau_12
 %format tau_21
 %format tau_22
+%format tau_i
+%format tau_m
+%format tau_im1 = tau "_{" i - 1 "}"
+
+%format rho_1
+%format rho_m
+%format rho_i
 
 %format x_1
 %format x_2
 %format x_n
 %format x_l
+%format x_i
+%format x_im1 = x "_{" i - 1 "}"
+
+%format y_1
+%format y_2
+%format y_n
+%format y_l
+%format y_i
+%format y_nm1 = y "_{" n - 1 "}"
 
 %format e_1
 %format e_2
 %format e_n
+%format e_i
+
+%format n_1
+%format n_2
 
 %format p_1
 %format p_2
@@ -64,6 +83,13 @@
 
 %format C_1
 %format C_2
+
+%format Delta'
+%format Delta''
+%format Delta_0
+%format Delta_1
+%format Delta_n
+%format Delta_nm1 = Delta "_{" n - 1 "}"
 
 %format (set (x)) = "\{" x "\}"
 %format (Set (ty)) = "\{" ty "\}"

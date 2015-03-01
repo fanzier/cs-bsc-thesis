@@ -31,6 +31,10 @@
 
 \allowdisplaybreaks[1]
 
+\newtheorem{definition}{Definition}
+
+%Title page
+
 \title{
   Implementing an Operational Semantics and
   Nondeterminism Analysis for a Functional-Logic Language
