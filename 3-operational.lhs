@@ -154,20 +154,20 @@ The rationale behind them is explained in the next section.
 and |b = n_1 == n_2|
 
 \item[CaseCon]
-\AxiomC{|Delta : e ~> Delta' : C</i/> <:vec tau_m:> (vec y_n)|}
-\AxiomC{|Delta' : e_i[vec y_n / vec x_n] ~>* Delta'' : v|}
-\BinaryInfC{|Delta : case e of { ..; C</i/> (vec x_n) -> e_i; .. } ~>* Delta'' : v|}
+\AxiomC{|Delta : e ~> Delta' : C<:vec tau_m:> (vec y_n)|}
+\AxiomC{|Delta' : e'[vec y_n / vec x_n] ~>* Delta'' : v|}
+\BinaryInfC{|Delta : case e of { ..; C (vec x_n) -> e'; .. } ~>* Delta'' : v|}
 \DisplayProof
-\hfill where |C</i/>| is the first matching constructor
+\hfill where |C| is the only matching constructor
 in the case alternatives.
 
 \item[CaseVar]
-\AxiomC{|Delta : e ~> Delta' : C</i/> <:vec tau_m:> (vec x_n)|}
-\AxiomC{|Delta'[x /-> C</i/> <:vec tau_m:> (vec x_n)] : e ~>* Delta'' : v|}
-\BinaryInfC{|Delta : case e of { ..; x -> e; .. } ~>* Delta'' : v|}
+\AxiomC{|Delta : e ~> Delta' : C<:vec tau_m:> (vec x_n)|}
+\AxiomC{|Delta'[x /-> C<:vec tau_m:> (vec x_n)] : e ~>* Delta'' : v|}
+\BinaryInfC{|Delta : case e of { ..; x -> e } ~>* Delta'' : v|}
 \DisplayProof
-\hfill where |x| is the first pattern that is not a constructor
-and none of the constructors before matched.
+\hfill only if none of the constructor patterns
+before the catch-all pattern |x| matched the constructor |C|.
 
 \bigskip
 
