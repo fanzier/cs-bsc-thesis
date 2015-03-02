@@ -145,13 +145,37 @@ The rationale behind them is explained in the next section.
 \DisplayProof
 \hfill for literals |n_1|, |n_2| and |n=n_1+n_2|
 
-\item[Eq]
+\item[EqNat]
 \AxiomC{|Delta : e_1 ~> Delta' : n_1|}
 \AxiomC{|Delta' : e_2 ~> Delta'' : n_2|}
 \BinaryInfC{|Delta : e_1 == e_2 ~>* Delta'' : b|}
 \DisplayProof
-\hfill for literals |n_1|, |n_2|
-and |b = n_1 == n_2|
+\hfill where |n_1,n_2| are literals
+and |b| is |True| if |n_1=n_2|, |False| otherwise.
+
+\item[Eq]
+\AxiomC{|Delta : e_1 ~> Delta' : C<:vec (tau_m):> (vec x_n)|}
+\AxiomC{|Delta' : e_2 ~> Delta_0 : C<:vec (tau_m):> (vec y_n)|}
+\AxiomC{|vec (Delta_nm1 : x_n == y_n ~> Delta_n : True)|}
+\TrinaryInfC{|Delta : e_1 == e_2 ~> Delta_n : True|}
+\DisplayProof
+
+\item[NEqCon]
+\AxiomC{|Delta : e_1 ~> Delta' : C<:vec (tau_m):> (vec x_n)|}
+\AxiomC{|Delta' : e_2 ~> Delta'' : D<:vec (tau_m):> (vec y_n)|}
+\BinaryInfC{|Delta : e_1 == e_2 ~> Delta'' : False|}
+\DisplayProof
+\hfill where |C| and |D| are different constructors.
+
+\item[NEq]
+\AxiomC{|Delta : e_1 ~> Delta' : C<:vec (tau_m):> (vec x_n)|}
+\AxiomC{|Delta' : e_2 ~> Delta_0 : C<:vec (tau_m):> (vec y_n)|}
+\AxiomC{|vec (Delta<:i-1:> : x_i == y_i ~> Delta_i : b_i)|}
+\TrinaryInfC{|Delta : e_1 == e_2 ~> Delta_i : False|}
+\DisplayProof
+\hfill where $i \in \{1,\dots,n\}$
+and |b_j| is |True| for all $j \in \{1,\dots,i-1\}$
+but |b_i| is |False|.
 
 \item[CaseCon]
 \AxiomC{|Delta : e ~> Delta' : C<:vec tau_m:> (vec y_n)|}
@@ -289,19 +313,40 @@ it does not need to be evaluated further.
   This way, after possibly having applied Flatten several times,
   the expression will be a value or have the shape required by Fun.
   \end{itemize}
-  \item \textbf{Primitive operations}
+\item \textbf{Plus.}
+Addition is a primitive operation,
+it has to deal with concrete numbers,
+so its arguments must be in flat normal form.
+Since they have type |Nat|,
+they already have to be literals.
+So to evaluate the expression,
+the two arguments are evaluated \emph{functionally}
+and the sum of the two literals is the result.
+\item \textbf{Equality tests.}
+In order to find out whether two expressions are equal,
+they first have to be evaluated to at least flat normal form.
+How evaluation continues depends on the result.
   \begin{itemize}
-  \item \textbf{Plus.}
-  Addition is a primitive operation,
-  it has to deal with concrete numbers,
-  so its arguments must be in flat normal form.
-  Since they have type |Nat|,
-  they already have to be literals.
-  So to evaluate the expression,
-  the two arguments are evaluated \emph{functionally}
-  and the sum of the two literals is the result.
+  \item \textbf{EqNat.}
+  If the resulting values are natural numbers,
+  the comparison yields |True| if the numbers are equal,
+  and |False| otherwise.
   \item \textbf{Eq.}
-  Equality tests work completely analogously.
+  If the resulting values are of an algebraic data type,
+  they are equal if and only if
+  their constructors match
+  and each of their arguments are equal,
+  which is checked recursively.
+  \item \textbf{NEq.}
+  If the constructors match
+  but some of their arguments are not equal,
+  then evaluation stops at the first pair of arguments to differ.
+  The rest of the arguments is \emph{not} evaluated.
+  The comparison yields |False|.
+  \item \textbf{NEqCon.}
+  If the constructors do not match,
+  the comparison yields |False| immediately.
+  No arguments are evaluated in this case.
   \end{itemize}
 \item \textbf{Case expressions.}
 In a case expression,

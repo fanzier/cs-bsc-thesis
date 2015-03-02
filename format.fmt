@@ -38,6 +38,9 @@
 %format alpha_m
 %format alpha_i
 
+%format b_i
+%format b_j
+
 %format tau'
 %format tau_1
 %format tau_2
@@ -88,6 +91,7 @@
 %format Delta''
 %format Delta_0
 %format Delta_1
+%format Delta_i
 %format Delta_n
 %format Delta_nm1 = Delta "_{" n - 1 "}"
 
