@@ -8,6 +8,7 @@
 
 \usepackage{lmodern}
 \usepackage{microtype}
+\usepackage{setspace}
 
 \usepackage{todonotes}
 \usepackage{bussproofs}
@@ -33,23 +34,45 @@
 
 \newtheorem{definition}{Definition}
 
-%Title page
-
-\title{
-  Implementing an Operational Semantics and
-  Nondeterminism Analysis for a Functional-Logic Language
-}
-\author{
-  Fabian Zaiser \\
-  University of Bonn
-}
-\date{\today}
-
 \bibliography{thesis}
 
 \begin{document}
+
 \begin{titlepage}
-\maketitle
+\begin{center}
+\textsc{\Large Rheinische Friedrich-Wilhelms-Universität Bonn} \\
+\vfill
+\textsc{\LARGE Bachelor Thesis}\\
+\vfill
+\rule{\linewidth}{1pt}
+\begin{spacing}{1.2}
+  \Huge
+  Implementing an Operational Semantics and Nondeterminism Analysis
+  for a Functional-Logic Language \\[-0.3cm]
+\end{spacing}
+\rule{\linewidth}{1pt}
+\vfill
+\begin{spacing}{1.2}
+  \LARGE
+  \textbf{Fabian Moritz Frank Zaiser} \\
+  Student number: XXXXXX \\
+  STREET NUMBER \\
+  D-53121 Bonn
+\end{spacing}
+\vfill
+\textit{\Large \today} \\
+\vfill
+{\Large
+Supervisor: Jun.-Prof.\ Dr.\ rer.\ nat.\ habil.\ Janis Voigtländer
+} \\
+\vfill
+\begin{spacing}{1.2}
+  \Large
+  Institute for Computer Science, Department III \\
+  Römerstraße 164 \\
+  D-53117 Bonn
+\end{spacing}
+\end{center}
 \end{titlepage}
 
 \begin{abstract}
