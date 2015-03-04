@@ -75,6 +75,22 @@ Supervisor: Jun.-Prof.\ Dr.\ rer.\ nat.\ habil.\ Janis Voigtländer
 \end{center}
 \end{titlepage}
 
+\chapter*{Eigenständigkeitserklärung}
+
+Hiermit erkläre ich, Fabian Moritz Frank Zaiser,
+dass ich die vorliegende Bachelorarbeit selbstständig verfasst
+und keine anderen als die angegebenen Quellen und Hilfsmittel benutzt,
+sowie Zitate kenntlich gemacht habe.
+
+\vspace{3cm}
+
+\begin{tabular}{lp{2em}l}
+ \hspace{3cm} && \hspace{6cm} \\ \hline
+ Ort, Datum && Unterschrift \\
+\end{tabular}
+
+\cleardoublepage
+
 \begin{abstract}
 Functional-logic languages like Curry aim
 to combine the strength of both functional and logic languages.
