@@ -1,5 +1,4 @@
-\documentclass[11pt,a4paper,abstract=on]{scrreprt}
-
+\documentclass[11pt,a4paper,headings]{scrbook}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -9,6 +8,10 @@
 \usepackage{lmodern}
 \usepackage{microtype}
 \usepackage{setspace}
+\usepackage[top=3cm,bottom=3cm,inner=3cm,outer=2cm]{geometry}
+
+\usepackage[Lenny]{fncychap}
+\usepackage[headsepline]{scrlayer-scrpage}
 
 \usepackage{todonotes}
 \usepackage{bussproofs}
@@ -19,6 +22,7 @@
 \usepackage{amsthm}
 
 \usepackage{hyperref}
+\usepackage{cleveref}
 
 \usepackage[backend=biber]{biblatex}
 
@@ -37,6 +41,8 @@
 \bibliography{thesis}
 
 \begin{document}
+
+\frontmatter
 
 \begin{titlepage}
 \begin{center}
@@ -91,7 +97,7 @@ sowie Zitate kenntlich gemacht habe.
 
 \cleardoublepage
 
-\begin{abstract}
+\chapter*{Abstract}
 Functional-logic languages like Curry aim
 to combine the strength of both functional and logic languages.
 In order to establish free theorems for such languages,
@@ -110,9 +116,10 @@ and as a consequence,
 code that does not use logic features is compiled to a cumbersome result.
 I explored ways to reduce the amount of unnecessary non-determinism
 in the generated SaLT code.
-\end{abstract}
 
 \tableofcontents
+
+\mainmatter
 
 %include 1-introduction.lhs
 
