@@ -97,7 +97,6 @@
 
 %format (set (x)) = "\{" x "\}"
 %format (Set (ty)) = "\{" ty "\}"
-%format (List (ty)) = "[" ty "]"
 %format (Pair a b) = "(" a "," b ")"
 %format (trans (e)) = "\trans{" e "}"
 %format (tytrans (ty)) = "\tytrans{" ty "}"
