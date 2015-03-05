@@ -38,6 +38,18 @@
 
 \newtheorem{definition}{Definition}
 
+\hypersetup{
+  pdftitle    = {Implementating an Operational Semantics and
+                 Nondeterminism Analysis for a Functional-Logic Language},
+  pdfauthor   = {Fabian Zaiser},
+  pdfkeywords = {CuMin,
+                 Curry,
+                 SaLT,
+                 Functional-Logic Programming,
+                 nondeterminism,
+                 operational semantics},
+}
+
 \bibliography{thesis}
 
 \begin{document}
