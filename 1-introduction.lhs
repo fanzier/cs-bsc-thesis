@@ -230,3 +230,159 @@ and the program does not run into an infinite loop.
 \todo[inline]{Include type classes?}
 
 \section{Curry}
+
+Curry is almost a superset of Haskell
+but also incorporates nondeterministic functions and free variables.
+As an example,
+the following choice function can return any of its two arguments.
+> choose x y = x
+> choose x y = y
+With this definition,
+|choose 0 1| has two values, |0| and |1|.
+A Curry interpreter will display both of them,
+when asked for more solutions. (similar to Prolog)
+As another application,
+consider this definition of a non-deterministic list insertion
+and permutation function.
+(Here, the conventional list syntax is used
+instead of the custom data type from above.)
+> insert x [] = [x]
+> insert x (first:rest) = choose (x:first:rest) (first:insert x rest)
+>
+> permute [] = []
+> permute (first:rest) = insert first (permute rest)
+To insert an object at any place in a list,
+|insert| puts it at the beginning
+or recursively inserts it later in the list.
+|insert 0 [3,4]| results in |[0,3,4]|, |[3,0,4]| or |[3,4,0]|.
+|permute| uses this function to insert the first element
+in the recursively permuted rest.
+Thus it non-deterministically computes all permutations of a list.
+
+Another new feature Curry offers are logic variables.
+It is a variable that is not assigned a value
+but instead is declared with the keyword |free|.
+The interpreter then searches for suitable assignments.
+
+> append [] ys = ys
+> append (x:xs) ys = x:append xs ys
+>
+> last list | list =:= append init [e] = e where init, e free
+
+The |append| function simply concatenates two lists
+and does not make use of nondeterminism.
+To retrieve the last element of a list,
+|last| specifies that this last element |e| must satisfy the constraint
+that concatenating some list |init| with |[e]| must yield the original list.
+As one might expect,
+a Curry interpreter will not blindly try every possible list
+until it finds the right one.
+Instead it uses a strategy called \emph{narrowing}
+that can be compared to Prolog's unification.
+The details will be discussed in Chapter 3.
+
+\section{\cumin{}}
+
+\cumin{} (Curry Minor) is a simple Curry dialect
+that lacks most of the syntactic sugar in Curry programs
+like |where| clauses and lambda abstractions.
+It essentially has only one logic programming feature: logic variables.
+However, this is enough to achieve a lot of what is possible in Curry,
+but at the expense of conciseness.
+For instance, the |choose| function from above can be translated to \cumin{}
+like this.
+> choose :: forall a. a -> a -> a
+> choose x y = let choice :: Bool free in
+>   case choice of
+>     False -> x
+>     True -> y
+The logic variable |choice| non-deterministically assumes all boolean values,
+and as a consequence,
+the function non-deterministically returns either of its arguments.
+The Curry examples from above can be translated like this.
+
+> insert :: forall a. a -> List a -> List a
+> insert x list = case list of
+>   Nil -> Cons<:a:> x Nil<:a:>
+>   Cons first rest -> choose<:a:>
+>     (Cons<:a:> x list)
+>     (Cons<:a:> first (insert<:a:> x rest))
+>
+> permute :: forall a. List a -> List a
+> permute list = case list of
+>   Nil -> Nil<:a:>
+>   Cons first rest -> insert<:a:> first (permute<:a:> rest)
+>
+>
+> append :: forall a. List a -> List a -> List a
+> append xs ys = case xs of
+>   Nil -> ys
+>   Cons first rest -> Cons<:a:> first (append<:a:> rest ys)
+>
+> last :: forall a. Data a => List a -> a
+> last list =
+>   let e :: a free in
+>   let init :: List a free in
+>   case append<:a:> init (Cons<:a:> e Nil<:a:>) == list of
+>     True -> e
+
+The syntax will be explained in detail later.
+Notable differences to Curry include
+mandatory type signatures,
+explicit type variable instantiation for polymorphic functions,
+and pattern matching exclusively with |case| expressions.
+
+\section{\salt{}}
+
+\salt{} makes the nondeterminism of \cumin{} programs explicit in the type.
+Nondeterministic expressions and functions have set types,
+written |Set|.
+Unlike \cumin{}, it does not have the |let .. free| construct.
+Instead, there is a special keyword |unknown|.
+For a certain class of types,
+including typical ADT types,
+it represents the set of all values of that type.
+For example, |unknown<:Bool:>| represents the set |{False, True}|
+and corresponds to the \cumin{} expression |let x :: Bool free in x|.
+There is only one combinator for sets,
+namely |>>=|, pronounced \enquote{bind}.
+It represents an indexed union.
+More precisely,
+|e >>= f| where |e :: Set tau| and |f :: tau -> Set tau'|,
+for some |tau, tau'|,
+represents $\bigcup_{x \in |e|} |(f x)|$.
+This can be used to the same effect as |let .. free| bindings in \cumin{},
+as the following translation of the |choose| function demonstrates.
+
+> choose :: a -> a -> Set a
+> choose = \x :: a -> \y :: a -> unknown<:Bool:> >>=
+>   \choice :: Bool -> case choice of
+>     False -> {x}
+>     True -> {y}
+
+The lambda abstraction after |>>=| replaces
+|False| by |x| and |True| by |y| in the set |{False, True}|,
+thus forming the set |{x, y}|,
+which clearly represents the set of values of the nondeterministic function.
+
+The example from above translated looks like this.
+> append :: forall a. List a -> List a -> List a
+> append = \xs :: List a -> \ys :: List a -> case xs of
+>   Nil -> ys
+>   Cons first rest -> Cons<:a:> first (append<:a:> rest ys)
+>
+> last :: forall a. Data a => List a -> Set a
+> last = \list :: List a ->
+>   unknown<:a:> >>= \e ->
+>   unknown<:List a:> >>= \init ->
+>   case append<:a:> init (Cons<:a:> e Nil<:a:>) == list of
+>     True -> {e}
+>     False -> failed<:Set a:>
+
+Since the type signature of |append| does not contain any set types,
+one can immediately know for sure
+that the function is deterministic.
+The code also demonstrates some other differences from \cumin{}, such as
+mandatory lambda abstractions instead of function argument notation and
+missing |let| bindings.
+The syntax will be described in detail in the next chapter.

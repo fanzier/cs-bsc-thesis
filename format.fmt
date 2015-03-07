@@ -8,9 +8,9 @@
 %format free = "\mathbf{free}"
 
 %format <: = "_{"
-%format :> = "}"
+%format :> = "}\;"
 %format </ = "^{"
-%format /> = "}"
+%format /> = "}\;"
 
 
 %format /-> = "\mapsto"
