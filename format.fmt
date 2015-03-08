@@ -26,17 +26,21 @@
 
 
 
-%format Context (a) = a "\mbox{~context}"
+%format isContext (a) = a "\mbox{~context}"
 %format emptycontext = "\emptyset"
 %format isType (a) = a "\in\mathsf{Type}"
 %format isData (a) = a "\in\mathsf{Data}"
 
 %format |- = "\vdash"
 
+%format Data = "\mathsf{Data}"
+%format Nat = "\mathsf{Nat}"
+
 %format alpha_1
 %format alpha_2
 %format alpha_m
 %format alpha_i
+%format alpha_l
 
 %format b_i
 %format b_j
@@ -48,10 +52,14 @@
 %format tau_l
 %format tau_11
 %format tau_12
+%format tau_1n = tau "_{" 1 n "_{" 1 "}}"
 %format tau_21
 %format tau_22
+%format tau_2n = tau "_{" 2 n "_{" 2 "}}"
 %format tau_i
 %format tau_m
+%format tau_m1 = tau "_{" m 1 "}"
+%format tau_mn = tau "_{" m n "_{" m "}}"
 %format tau_im1 = tau "_{" i - 1 "}"
 
 %format rho_1
@@ -72,6 +80,9 @@
 %format y_i
 %format y_nm1 = y "_{" n - 1 "}"
 
+%format z_1
+%format z_n
+
 %format e_1
 %format e_2
 %format e_n
@@ -86,6 +97,7 @@
 
 %format C_1
 %format C_2
+%format C_m
 
 %format Delta'
 %format Delta''
