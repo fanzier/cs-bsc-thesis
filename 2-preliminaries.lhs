@@ -22,7 +22,7 @@ By convention,
 |Gamma| denotes a context,
 unless otherwise stated.
 
-When specifying the well-formedness, evaluation or other \emph{judgements}
+When specifying the well-formedness, evaluation or other \emph{judgments}
 about programs, types or expressions,
 the following notation is widely used.
 
@@ -34,12 +34,12 @@ the following notation is widely used.
 \DisplayProof
 \]
 
-This means that the consequence is a valid judgement
-if all the assumptions can be shown to be valid judgements.
-Oftentimes, these judgements will only make sense in a certain \emph{context},
+This means that the consequence is a valid judgment
+if all the assumptions can be shown to be valid judgments.
+Oftentimes, these judgments will only make sense in a certain \emph{context},
 denoted |Gamma|.
-The judgement is then written with the turnstile symbol:
-$\Gamma \vdash \text{judgement}$.
+The judgment is then written with the turnstile symbol:
+$\Gamma \vdash \text{judgment}$.
 
 \section{Types in \cumin{} and \salt{}}
 

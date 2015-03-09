@@ -45,7 +45,7 @@ to introduce these two languages in \cite{orig}.
 In the later sections of this chapter,
 I present an example-based overview of these languages.
 A more formal description can be found in Chapter 2.
-But first, let me give a brief introduction to Hakell,
+But first, let me give a brief introduction to Haskell,
 for one thing because it is the language that Curry is built upon,
 for another thing because the implementation part of this thesis
 was carried out in Haskell.
@@ -56,7 +56,7 @@ Haskell is a purely functional, statically typed, lazy language.
 This means
 that Haskell functions are more like mathematical functions
 than procedures in imperative languages,
-in that they always produce the same ouput for the same input,
+in that they always produce the same output for the same input,
 and side-effects are restricted.
 Every expression is typed and the type checker ensures
 that the types match up,
