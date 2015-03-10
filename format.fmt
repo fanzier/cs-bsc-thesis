@@ -27,14 +27,19 @@
 
 
 %format isContext (a) = a "\mbox{~context}"
-%format emptycontext = "\emptyset"
+%format emptycontext = "\emptyset{}"
 %format isType (a) = a "\in\mathsf{Type}"
 %format isData (a) = a "\in\mathsf{Data}"
+%format dataIdx a b = a "\in\mathsf{Data}^{" b "}"
+%format emptyset = "\emptyset{}"
 
 %format |- = "\vdash"
 
 %format Data = "\mathsf{Data}"
 %format Nat = "\mathsf{Nat}"
+%format C = "\mathsf{C}"
+
+%format Gamma'
 
 %format alpha_1
 %format alpha_2

@@ -9,6 +9,10 @@ which was done together with Fabian Thorand.
 
 In the following,
 a sequence of objects |z_1 .. z_n| will be denoted |vec z_n|.
+If the index is unclear,
+it is written |((vec z_n))<:n:>|,
+or even $|((vec z_n))|_{n \in S}$
+where $S$ denotes the range of $n$.
 By convention,
 |alpha, beta| denote type variables,
 |rho, tau| denote types,
@@ -111,15 +115,68 @@ is invalid in \cumin{} and \salt{}
 although it is fine in Haskell.
 
 Logic variables in \cumin{} and \salt{} cannot have any type;
-only |Data| types are allowed.
-What constitutes a |Data| type, is specified below.
+only so called |Data| types are allowed.
+This is because values of logic variables have to be able to be enumerated.
+In contrast, values of function types cannot in general be enumerated
+since there may be uncountably many, e.g. |Nat -> Bool|.
+Most algebraic data  types, however, are enumerable,
+for instance |Bool|, |Nat|,
+|List tau| or |Tree tau| for any enumerable |tau|.
+To formalize this,
+we introduce another judgement |dataIdx A I|
+for an ADT |A| with |l| type parameters.
+It states that |A (vec tau_l)| is a |Data| type
+if |tau_i| is, for each $i \in I$.
+Essentially, an ADT is a |Data| type
+if the types of all constructors are |Data| types.
+The following rules capture this notion.
 
 \AxiomC{|Gamma, alpha, isData alpha ||- isData alpha|}
 \DisplayProof
-\AxiomC{|Gamma ||- isData Nat|}
+\AxiomC{|Gamma, alpha, dataIdx A I ||- dataIdx A I|}
 \DisplayProof
+\AxiomC{|Gamma ||- isData Nat|}
+\DisplayProof \\
+\AxiomC{|Gamma ||- dataIdx A I|}
+\AxiomC{$(|vec (Gamma ||- isData tau_i)|)_{i \in I}$}
+\BinaryInfC{|Gamma ||- isData (A (vec tau_l))|}
+\DisplayProof \\
+\AxiomC{$\left(|(vec (Gamma, dataIdx A I, ((vec alpha_l))<:l `elem` I:>, ((vec (isData alpha_l)))<:l `elem` I:> ||- isData tau_mn)|\right)_{mn_m}$}
+\UnaryInfC{|Gamma ||- dataIdx A I|}
+\DisplayProof
+where |data A (vec alpha_l) = vec (C_m (vec tau_mn))|
 
-\todo[inline]{Treatment of ADTs!}
+Let us take a look at some examples.
+The deduction of |isData Bool| is quite simple.
+\begin{prooftree}
+\AxiomC{|Gamma ||- dataIdx Bool emptyset|}
+\UnaryInfC{|Gamma ||- isData Bool|}
+\end{prooftree}
+One can also deduce |dataIdx List (set 1)|. (using the abbreviation |Gamma' := Gamma, dataIdx List (set 1), a, isData a|)
+\begin{prooftree}
+  \AxiomC{|Gamma' ||- isData a|}
+    \AxiomC{|Gamma' ||- dataIdx List (set 1)|}
+    \AxiomC{|Gamma' ||- isData a|}
+  \BinaryInfC{|Gamma' ||- isData (List a)|}
+\BinaryInfC{|Gamma ||- dataIdx List (set 1)|}
+\end{prooftree}
+Putting things together, |isData (List Bool)| holds, too.
+\begin{prooftree}
+  \AxiomC{|Gamma ||- dataIdx List (set 1)|}
+  \AxiomC{|Gamma ||- isData Bool|}
+\BinaryInfC{|Gamma ||- isData (List Bool)|}
+\end{prooftree}
+
+As another example, consider the phantom type
+> data Phantom a = P
+where the type parameter |a| only occurs on the left-hand side.
+|Phantom tau| is a |Data| type for any |tau| since its only value is |P|.
+So, even for function types like |Nat -> Nat|,
+we have |isData (Phantom (Nat -> Nat))|.
+\begin{prooftree}
+\AxiomC{|Gamma ||- dataIdx Phantom emptyset|}
+\UnaryInfC{|Gamma ||- isData (Phantom tau)|}
+\end{prooftree}
 
 \section{\cumin{} syntax and typing}
 
