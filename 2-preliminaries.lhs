@@ -380,4 +380,123 @@ The missing subderivations look like this.
 
 \section{\salt{} syntax and typing}
 
+The syntax of \salt{} is quite similar to \cumin{}.
+However, it replaces the |let .. free| construct
+with the keyword |unknown<:tau:>|,
+which represents the set of values of the type |tau|.
+For this, |tau| has to be a |Data| type.
+As mentioned in the introduction,
+other primitives for sets are |set| for creating singleton sets
+and |>>=| for indexed unions.
+Also, \salt{} has explicit lambda abstractions.
+> e ::=  x | n | f<:vec tau_m:> | C<:vec tau_m:> | \x :: tau -> e
+>        | e_1 e_2 | e_1 + e_2 | e_1 == e_2 | failed<:tau:>
+>        | unknown<:tau:> | set e | e_1 >>= e_2
+>        | case e of { vec(C_i (vec x_i_j) -> e_i;) }
+>        | case e of { vec(C_i (vec x_i_j) -> e_i;) x -> e' }
+> n ::= 0 | 1 | ..
+As \salt{} has lambda abstractions,
+there is no need for function arguments.
+Hence, function definitions are simpler than in \cumin{}.
+> f :: forall (vec alpha_m). ((vec (Data alpha_i_j))) => tau
+> f = e
+
+For \salt{}, we also created a prelude with common definitions.
+It is mainly a manual translation of the \cumin{} prelude.
+There are only two differences.
+> choose :: forall a. a -> a -> Set a
+> sMap :: forall a b. (a -> b) -> Set a -> Set b
+The nondeterministic nature of |choose| is no visible in the type,
+it returns a set.
+There is also a new function |sMap|
+which acts on sets like |map| acts on lists.
+It yields a set where the given function has been applied
+to every element of the original one.
+
+There is also an alternative prelude that is generated
+by the translation described in Chapter 4.
+It behaves the same but due to the nature of the translation,
+the translated versions contain more sets than necessary, for example,
+|choose| is translated to |choose :: Set (a -> Set (a -> Set a))|.
+
+The typing rules are similar those of \cumin{}.
+The ones for let bindings are now unnecessary.
+Instead, we need rules for lambda abstractions,
+and most importantly, for handling sets.
+\begin{gather*}
+\AxiomC{|Gamma, x :: tau' ||- e :: tau|}
+\UnaryInfC{|Gamma || (\x :: tau' -> e) :: tau' -> tau|}
+\DisplayProof
+\\[1em]
+\AxiomC{|Gamma ||- isData tau|}
+\UnaryInfC{|Gamma ||- unknown<:tau:> :: Set tau|}
+\DisplayProof
+\quad
+\AxiomC{|Gamma ||- e :: tau|}
+\UnaryInfC{|Gamma ||- set e :: Set tau|}
+\DisplayProof
+\quad
+\AxiomC{|Gamma ||- e_1 :: Set tau|}
+\AxiomC{|Gamma ||- e_2 :: tau -> Set tau'|}
+\BinaryInfC{|Gamma ||- e_1 >>= e_2 :: Set tau'|}
+\DisplayProof
+\end{gather*}
+A function in the shape given above is well-typed
+if the following judgment is correct.
+\[
+\AxiomC{|vec alpha_m, vec (isData alpha_i_j) ||- e :: tau|}
+\DisplayProof
+\]
+
+Having specified the \salt{} syntax and typing rules,
+let us take a look at some examples.
+It is instructive to translate the \cumin{} programs above to \salt{}.
+> choose :: forall a. a -> a -> a
+> choose = \x :: a -> \y :: a -> unknown<:Bool:> >>= \c :: Bool ->
+>   case c of { True -> set x; False -> set y }
+>
+> map :: forall a b. (a -> b) -> List a -> List b
+> map = \f :: (a -> b) -> \xs :: List a -> case xs of {
+>   Nil -> Nil<:b:>;
+>   Cons y ys -> Cons<:b:> (f<:a:> y) (map<:a,b:> f<:a:> ys)
+>   }
+Proving that this program is well-typed works similarly as above.
+Let |Gamma := a, x :: a, y :: a| and |Gamma' := Gamma, c :: Bool|.
+\begin{prooftree}
+      \AxiomC{|..|}
+    \UnaryInfC{|Gamma ||- isData Bool|}
+  \UnaryInfC{|Gamma ||- unknown<:Bool:> :: Set Bool|}
+      \AxiomC{|Gamma' ||- c :: Bool|}
+      \AxiomC{|Gamma' ||- set x :: Set a|}
+      \AxiomC{|Gamma' ||- set y :: Set a|}
+    \TrinaryInfC{|Gamma' ||- case c of { True -> set x; False -> set y } :: Set a|}
+  \UnaryInfC{|Gamma ||- \c :: Bool -> case c of { .. } :: Bool -> Set a|}
+\BinaryInfC{|Gamma ||- unknown<:Bool:> >>= \c :: Bool -> case c of { .. } :: Set a|}
+\UnaryInfC{|a, x :: a ||- \y :: a -> unknown<:Bool:> >>= \c :: Bool -> case c of { .. } :: a -> -> Set a|}
+\UnaryInfC{|a ||- \x :: a -> \y :: a -> unknown<:Bool:> >>= \c :: Bool -> case c of { .. } :: a -> a -> -> Set a|}
+\end{prooftree}
+
+The proof of well-typedness of |map| is so similar to the one in \cumin{}
+that it can be safely left out.
+Instead let us understand the function |sMap|.
+> sMap :: forall a b. (a -> b) -> Set a -> Set b
+> sMap = \f :: (a -> b) -> \xs :: Set a -> xs >>= \x :: a -> set (f x)
+This function applies |f| to every element of |xs|.
+As the only combinator for sets is the indexed union with |>>=|,
+|sMap| constructs the singleton set |set (f x)|
+for every element |x| of |xs| und forms the union of these sets,
+yielding the set $\{ |(f x)| || |x| \in |xs| \}$, as desired.
+To check type correctness, let |Gamma := a, b, f :: a -> b, xs :: Set a|.
+\begin{prooftree}
+  \AxiomC{|Gamma ||- xs :: Set a|}
+        \AxiomC{|Gamma, x :: a ||- f :: a -> b|}
+        \AxiomC{|Gamma, x :: a ||- x :: a|}
+      \BinaryInfC{|Gamma, x :: a ||- f x :: b|}
+    \UnaryInfC{|Gamma, x :: a ||- set (f x) :: Set b|}
+  \UnaryInfC{|Gamma ||- \x :: a -> set (f x) :: a -> Set b|}
+\BinaryInfC{|Gamma ||- xs >>= \x :: a -> set (f x) :: Set b|}
+\UnaryInfC{|a, b, f :: (a -> b) ||- \xs :: Set a -> xs >>= \x :: a -> set (f x) :: Set a -> Set b|}
+\UnaryInfC{|a, b ||- \f :: (a -> b) -> \xs :: Set a -> xs >>= \x :: a -> set (f x) :: (a -> b) -> Set a -> Set b|}
+\end{prooftree}
+
 \section{Implementation}
