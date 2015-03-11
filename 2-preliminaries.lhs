@@ -13,6 +13,7 @@ If the index is unclear,
 it is written |((vec z_n))<:n:>|,
 or even $|((vec z_n))|_{n \in S}$
 where $S$ denotes the range of $n$.
+|e[y/x]| means replacing every occurence of |x| in |e| with |y|.
 By convention,
 |alpha, beta| denote type variables,
 |rho, tau| denote types,
@@ -179,6 +180,203 @@ we have |isData (Phantom (Nat -> Nat))|.
 \end{prooftree}
 
 \section{\cumin{} syntax and typing}
+
+\cumin{} programs consist of algebraic data type declarations
+and function definitions.
+A function |f| is defined by giving its type signature, an argument list
+and the expression it computes, depending on the arguments.
+> f :: forall (vec alpha_m). ((vec (Data alpha_i_j))) => tau_1 -> .. -> tau_n -> tau
+> f x_1 .. x_n = e
+The type signature consists type variables to allow polymorphism,
+a type class context which specifies
+that certain type variables have to be instantiated to |Data| types,
+and finally the actual function type.
+
+\cumin{} expressions are of the following form.
+> e ::=  x | n | f<:vec tau_m:> | C<:vec tau_m:>
+>        | e_1 e_2 | e_1 + e_2 | e_1 == e_2 | failed<:tau:>
+>        | let x = e_1 in e_2 | let x :: tau free in e
+>        | case e of { vec(C_i (vec x_i_j) -> e_i;) }
+>        | case e of { vec(C_i (vec x_i_j) -> e_i;) x -> e' }
+> n ::= 0 | 1 | ..
+As might be expected, there are variables and literals for natural numbers.
+Polymorphic functions and constructors
+have to be given type instantiations at the call site.
+In principle, these could be inferred automatically
+but this complicates type checking.
+For the sake of simplicity, we refrained from it.
+Function application is written by juxtaposition.
+The supported primitive operations are addition for natural numbers
+and equality checks for |Data| types, in particular natural numbers.
+|failed| signifies that the computation does not yield a result.
+It can be used to cut off unwanted computation branches.
+Let bindings allow
+using the result of a computation more than once in an expression.
+Recursive let bindings are not allowed, \ie |x| must not occur in |e_1|.
+The construct |let .. free| introduces logic variables,
+it is the only logic feature in the language.
+Case expressions examine the \emph{scrutinee} |e|
+and it is matched with one or more constructor patterns |C_i x_i_j|.
+The constructors |C_i| that are matched on must be pairwise different.
+There may or may not be a catch-all variable pattern |x| at the end.
+It only matches if none of the constructors before did.
+
+\todo[inline]{Describe syntactic sugar.}
+\todo[inline]{Describe plain text syntax and indentation.}
+
+There are some definitions that are so common
+that we decided to put them in a so-called \emph{prelude},
+which is copied to the top of every program.
+It defines common data types like lists and boolean types
+and functions that handle them.
+To be precise, the prelude contains the following declarations.
+
+> data Pair a b = Pair a b
+> data List a = Nil | Cons a (List a)
+> data Maybe a = Nothing | Just a
+> data Either a b = Left a | Right b
+> data Bool = False | True
+>
+> and :: Bool -> Bool -> Bool
+> choose :: forall a. a -> a -> a
+> const :: forall a b. a -> b -> a
+> either :: forall a b c. (a -> c) -> (b -> c) -> Either a b -> c
+> filter :: forall a. (a -> Bool) -> List a -> List a
+> flip :: forall a b c. (a -> b -> c) -> b -> a -> c
+> foldr :: forall a b. (a -> b -> b) -> b -> List a -> b
+> fst :: forall a b. Pair a b -> a
+> id :: forall a. a -> a
+> length :: forall a. List a -> Nat
+> map :: forall a b. (a -> b) -> List a -> List b
+> maybe :: forall a b. b -> (a -> b) -> Maybe a -> b
+> not :: Bool -> Bool
+> or :: Bool -> Bool -> Bool
+> snd :: forall a b. Pair a b -> b
+
+Furthermore, expressions have to be well-typed.
+For example, the term |True + 1| does not make sense,
+because the primitive operator |+| only accepts numbers as arguments.
+The typing rules are given below.
+
+\begin{gather*}
+\AxiomC{|Gamma, x :: tau ||- x :: tau|}
+\DisplayProof
+\quad
+\AxiomC{|Gamma ||- n :: Nat|}
+\DisplayProof
+\quad
+\AxiomC{|Gamma ||- failed<:tau:> :: tau|}
+\DisplayProof
+\quad
+\AxiomC{|Gamma ||- e_1 :: tau' -> tau|}
+\AxiomC{|Gamma ||- e_2 :: tau'|}
+\BinaryInfC{|Gamma || e_1 e_2 :: tau|}
+\DisplayProof
+\\[1em]
+\AxiomC{|vec (Gamma ||- isData tau_i_j)|}
+\UnaryInfC{|Gamma ||- f<:vec tau_m:> :: tau[tau_m/alpha_m]|}
+\DisplayProof
+\quad\text{where |f :: forall (vec alpha_m). ((vec (Data alpha_i_j))) => tau|}
+\\[1em]
+\AxiomC{|Gamma ||- C<:vec rho_m:> :: (tau_1 -> .. tau_n -> A (vec alpha_m))[vec (rho_m/alpha_m)]|}
+\DisplayProof
+\text{for every |data A (vec alpha_m) = .. || C tau_1 .. tau_n || ..|}
+\\[1em]
+\AxiomC{|Gamma ||- e_1 :: tau'|}
+\AxiomC{|Gamma, x :: tau' ||- e_2 :: tau|}
+\BinaryInfC{|Gamma ||- let x = e_1 in e_2 :: tau|}
+\DisplayProof
+\quad
+\AxiomC{|Gamma, x :: tau' ||- e :: tau|}
+\AxiomC{|Gamma ||- isData tau'|}
+\BinaryInfC{|Gamma ||- let x :: tau' free in e :: tau|}
+\DisplayProof
+\\[1em]
+\AxiomC{|Gamma ||- e_1 :: Nat|}
+\AxiomC{|Gamma ||- e_2 :: Nat|}
+\BinaryInfC{|Gamma ||- e_1 + e_2 :: Nat|}
+\DisplayProof
+\quad
+\AxiomC{|Gamma ||- e_1 :: tau|}
+\AxiomC{|Gamma ||- e_2 :: tau|}
+\AxiomC{|Gamma ||- isData tau|}
+\TrinaryInfC{|Gamma ||- e_1 == e_2 :: Bool|}
+\DisplayProof
+\\[1em]
+\AxiomC{|Gamma ||- e :: A (vec rho_m)|}
+\AxiomC{|vec (Gamma, vec (x_i_j :: tau_i_j[vec (rho_m/alpha_m)]) ||- e_i :: tau|}
+\BinaryInfC{|Gamma ||- case e of { vec(C_i (vec x_i_j) -> e_i;) } :: tau|}
+\DisplayProof
+\quad\text{for every |data A (vec rho_m) = vec (C_i (vec tau_i_j))|}
+\\[1em]
+\AxiomC{\text{\dots (as above)}}
+\AxiomC{|Gamma, x :: A (vec rho_m) ||- e' :: tau|}
+\BinaryInfC{|Gamma ||- case e of { vec(C_i (vec x_i_j) -> e_i;) x -> e'; } :: tau|}
+\DisplayProof
+\quad\text{for every |data A (vec rho_m) = vec (C_i (vec tau_i_j))|}
+\end{gather*}
+
+In order to type check functions, recall the shape of their definitions.
+> f :: forall (vec alpha_m). ((vec (Data alpha_i_j))) => tau_1 -> .. -> tau_n -> tau
+> f x_1 .. x_n = e
+Such a \cumin{} function |f| is well-typed
+if the following holds.
+\[
+\AxiomC{|vec alpha_m, vec (isData alpha_i_j), vec (x_n :: tau_n) ||- e :: tau|}
+\DisplayProof
+\]
+A \cumin{} program is well-typed if each of its functions is well-typed.
+
+\subsection{Examples}
+
+As an example, consider the following program.
+> choose :: forall a. a -> a -> a
+> choose x y = let c :: Bool free in case c of { True -> x; False -> y }
+>
+> map :: forall a b. (a -> b) -> List a -> List b
+> map f xs = case xs of { Nil -> Nil<:b:>; Cons y ys -> Cons<:b:> (f<:a:> y) (map<:a,b:> f<:a:> ys) }
+
+To prove that |choose| is well-typed,
+consider the following deduction.
+Let |Gamma := a, x :: a, y :: a|.
+\begin{prooftree}
+    \AxiomC{|Gamma, c :: Bool ||- c :: Bool|}
+    \AxiomC{|Gamma, c :: Bool ||- x :: a|}
+    \AxiomC{|Gamma, c :: Bool ||- y :: a|}
+  \TrinaryInfC{|Gamma, c :: Bool ||- case c of { True -> x; False -> y } :: a|}
+    \AxiomC{\dots}
+  \UnaryInfC{|Gamma ||- isData Bool|}
+\BinaryInfC{|Gamma ||- let c :: Bool free in case c of { True -> x; False -> y } :: a|}
+\end{prooftree}
+The judgment |Gamma ||- isData Bool| has been proven before.
+Similarly, one can prove that |map| is well-typed.
+Let |Gamma := f :: a -> b, xs :: List a| and |Gamma' := Gamma, y :: a, ys :: List a|.
+\begin{prooftree}
+\small
+  \AxiomC{|Gamma ||- xs :: List a|}
+  \AxiomC{|Gamma ||- Nil<:b:> :: List b|}
+      \AxiomC{\dots}
+    \UnaryInfC{|Gamma' ||- Cons<:b:> .. :: List b -> List b|}
+      \AxiomC{\dots}
+    \UnaryInfC{|Gamma' ||- map<:a,b:> .. :: List b|}
+  \BinaryInfC{|Gamma, y :: a, ys :: List a ||- Cons<:b:> (f y) (map<:a,b:> f ys) :: List b|}
+\TrinaryInfC{|Gamma ||- case xs of { Nil -> Nil<:b:>; Cons y ys -> Cons<:b:> (f y) (map<:a,b:> f ys) } :: List b|}
+\end{prooftree}
+The missing subderivations look like this.
+\begin{prooftree}
+  \AxiomC{|Gamma' ||- Cons<:b:> :: b -> List b -> List b|}
+    \AxiomC{|Gamma' ||- f :: a -> b|}
+    \AxiomC{|Gamma' ||- y :: a|}
+  \BinaryInfC{|Gamma' ||- (f y) :: b|}
+\BinaryInfC{|Gamma' ||- Cons<:b:> (f y) :: List b -> List b|}
+\end{prooftree}
+\begin{prooftree}
+    \AxiomC{|Gamma' ||- map<:a,b:> :: (a -> b) -> List a -> List b|}
+    \AxiomC{|Gamma' ||- f :: List a|}
+  \BinaryInfC{|Gamma' ||- map<:a,b:> f :: List a -> List b|}
+  \AxiomC{|Gamma' ||- ys :: List a|}
+\BinaryInfC{|Gamma' ||- map<:a,b:> f ys :: List b|}
+\end{prooftree}
 
 \section{\salt{} syntax and typing}
 

@@ -38,6 +38,20 @@
 %format Data = "\mathsf{Data}"
 %format Nat = "\mathsf{Nat}"
 %format C = "\mathsf{C}"
+%format A = "\mathsf{A}"
+%format Maybe = "\mathsf{Maybe}"
+%format List = "\mathsf{List}"
+%format Either = "\mathsf{Either}"
+%format Bool = "\mathsf{Bool}"
+%format True = "\mathsf{True}"
+%format False = "\mathsf{False}"
+%format Nil = "\mathsf{Nil}"
+%format Cons = "\mathsf{Cons}"
+%format Nothing = "\mathsf{Nothing}"
+%format Just = "\mathsf{Just}"
+%format Left = "\mathsf{Left}"
+%format Right = "\mathsf{Right}"
+%format Pair = "\mathsf{Pair}"
 
 %format Gamma'
 
@@ -46,6 +60,7 @@
 %format alpha_m
 %format alpha_i
 %format alpha_l
+%format alpha_i_j = alpha "_{i_j}"
 
 %format b_i
 %format b_j
@@ -62,6 +77,7 @@
 %format tau_22
 %format tau_2n = tau "_{" 2 n "_{" 2 "}}"
 %format tau_i
+%format tau_i_j = tau "_{i_j}"
 %format tau_m
 %format tau_m1 = tau "_{" m 1 "}"
 %format tau_mn = tau "_{" m n "_{" m "}}"
@@ -77,6 +93,7 @@
 %format x_l
 %format x_i
 %format x_im1 = x "_{" i - 1 "}"
+%format x_i_j = x "_{i_j}"
 
 %format y_1
 %format y_2
@@ -102,6 +119,7 @@
 
 %format C_1
 %format C_2
+%format C_i
 %format C_m
 
 %format Delta'
@@ -114,6 +132,5 @@
 
 %format (set (x)) = "\{" x "\}"
 %format (Set (ty)) = "\{" ty "\}"
-%format (Pair a b) = "(" a "," b ")"
 %format (trans (e)) = "\trans{" e "}"
 %format (tytrans (ty)) = "\tytrans{" ty "}"
