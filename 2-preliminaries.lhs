@@ -181,16 +181,22 @@ we have |isData (Phantom (Nat -> Nat))|.
 
 \section{\cumin{} syntax and typing}
 
+\subsection{Syntax}
+
 \cumin{} programs consist of algebraic data type declarations
 and function definitions.
-A function |f| is defined by giving its type signature, an argument list
+A function |f| is defined by giving its \emph{type signature},
+a list of variables that constitute the arguments,
 and the expression it computes, depending on the arguments.
 > f :: forall (vec alpha_m). ((vec (Data alpha_i_j))) => tau_1 -> .. -> tau_n -> tau
 > f x_1 .. x_n = e
-The type signature consists type variables to allow polymorphism,
-a type class context which specifies
+The type signature consists of \emph{type variables} to allow polymorphism,
+a \emph{type class context} which specifies
 that certain type variables have to be instantiated to |Data| types,
 and finally the actual function type.
+One does not need to write the empty context |() =>|,
+and if there are no type variables,
+the $\forall.$ may be droppped, as well.
 
 \cumin{} expressions are of the following form.
 > e ::=  x | n | f<:vec tau_m:> | C<:vec tau_m:>
@@ -199,15 +205,20 @@ and finally the actual function type.
 >        | case e of { vec(C_i (vec x_i_j) -> e_i;) }
 >        | case e of { vec(C_i (vec x_i_j) -> e_i;) x -> e' }
 > n ::= 0 | 1 | ..
-As might be expected, there are variables and literals for natural numbers.
+As might be expected,
+the syntax includes variables and literals for natural numbers.
 Polymorphic functions and constructors
 have to be given type instantiations at the call site.
 In principle, these could be inferred automatically
 but this complicates type checking.
-For the sake of simplicity, we refrained from it.
-Function application is written by juxtaposition.
+For the sake of simplicity, we refrained from doing it.
+Function application is written by juxtaposition,
+it associates to the left and has highest binding precedence.
 The supported primitive operations are addition for natural numbers
 and equality checks for |Data| types, in particular natural numbers.
+As usual, the operator |+| binds more tightly than |==|.
+The former associates to the left and the latter is not associative.
+Parentheses can be used for structuring expressions.
 |failed| signifies that the computation does not yield a result.
 It can be used to cut off unwanted computation branches.
 Let bindings allow
@@ -215,14 +226,33 @@ using the result of a computation more than once in an expression.
 Recursive let bindings are not allowed, \ie |x| must not occur in |e_1|.
 The construct |let .. free| introduces logic variables,
 it is the only logic feature in the language.
-Case expressions examine the \emph{scrutinee} |e|
-and it is matched with one or more constructor patterns |C_i x_i_j|.
+Case expressions examine the value of an expression,
+called the \emph{scrutinee}.
+The value is matched with one or more constructor patterns |C_i x_i_j|.
 The constructors |C_i| that are matched on must be pairwise different.
 There may or may not be a catch-all variable pattern |x| at the end.
 It only matches if none of the constructors before did.
 
-\todo[inline]{Describe syntactic sugar.}
-\todo[inline]{Describe plain text syntax and indentation.}
+Besides the mathematical notation,
+there is also a plain-text representation.
+The correspondence is straightforward:
+
+\begin{tabular}{l l}
+  Mathematical notation & Plain text \\
+  \hline
+  |forall a.| & \texttt{forall a.} \\
+  |->| & \texttt{->} \\
+  |=>| & \texttt{=>} \\
+  |f<:t:>| & \texttt{f<:t:>} \\
+  |==| & \texttt{==} \\
+\end{tabular}
+
+As in Haskell, code can also be written using indentation
+instead of braces and semicola.
+For instance, a case expression can be written this way.
+> case e of
+>   C_1 .. -> ..
+>   C_2 .. -> ..
 
 There are some definitions that are so common
 that we decided to put them in a so-called \emph{prelude},
@@ -252,6 +282,14 @@ To be precise, the prelude contains the following declarations.
 > not :: Bool -> Bool
 > or :: Bool -> Bool -> Bool
 > snd :: forall a b. Pair a b -> b
+
+Finally, there is some syntactic sugar
+to make programs easier to read and write.
+List literals can be written in the natural way |[e_1, .., e_n]<:tau:>|$\!\!\!$.
+This is desugared to the expression
+|Cons<:tau:> e_1 (.. (Cons<:tau:> e_n Nil<:tau:>) ..)|.
+
+\subsection{Typing}
 
 Furthermore, expressions have to be well-typed.
 For example, the term |True + 1| does not make sense,
@@ -386,8 +424,10 @@ with the keyword |unknown<:tau:>|,
 which represents the set of values of the type |tau|.
 For this, |tau| has to be a |Data| type.
 As mentioned in the introduction,
-other primitives for sets are |set| for creating singleton sets
+other primitives for sets are
+|set| for creating singleton sets
 and |>>=| for indexed unions.
+This operator binds least tightly and associates to the left.
 Also, \salt{} has explicit lambda abstractions.
 > e ::=  x | n | f<:vec tau_m:> | C<:vec tau_m:> | \x :: tau -> e
 >        | e_1 e_2 | e_1 + e_2 | e_1 == e_2 | failed<:tau:>
@@ -400,6 +440,20 @@ there is no need for function arguments.
 Hence, function definitions are simpler than in \cumin{}.
 > f :: forall (vec alpha_m). ((vec (Data alpha_i_j))) => tau
 > f = e
+
+\salt{} has the same plain text representation as \cumin{}.
+The additional symbols are written as shown in the table.
+Since \verb!Set! is a reserved type constructor,
+it cannot be the name of an ADT.
+
+\begin{tabular}{l l}
+Mathematical notation & plain text \\
+\hline
+|Set t| in types & \verb!Set t! \\
+|set e| in expressions & \verb!{e}! \\
+|\| & \verb!\! \\
+|>>=| & \verb!>>=!
+\end{tabular}
 
 For \salt{}, we also created a prelude with common definitions.
 It is mainly a manual translation of the \cumin{} prelude.
