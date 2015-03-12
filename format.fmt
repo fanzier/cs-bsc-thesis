@@ -134,3 +134,8 @@
 %format (Set (ty)) = "\{" ty "\}"
 %format (trans (e)) = "\trans{" e "}"
 %format (tytrans (ty)) = "\tytrans{" ty "}"
+
+%format <*> = "<\!\!\!*\!\!\!>"
+%format <* = "<\!\!\!*"
+%format *> = "*\!\!\!>"
+%format <$> = "<\!\!\$\!\!>"

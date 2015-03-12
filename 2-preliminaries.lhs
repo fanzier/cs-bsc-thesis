@@ -554,3 +554,155 @@ To check type correctness, let |Gamma := a, b, f :: a -> b, xs :: Set a|.
 \end{prooftree}
 
 \section{Implementation}
+
+Before implementing a semantics or translation for the two languages,
+some groundwork has to be done.
+\cumin{} and \salt{} programs have to be parsed
+into an \emph{abstract syntax tree (AST)}.
+One needs a type checker for ASTs and also a pretty printer will be useful.
+This functionality was implemented together with Fabian Thorand,
+whose bachelor thesis is also concerned with \cumin{} and \salt{}.
+
+The implementation was done in Haskell and is split into three packages:
+\texttt{funlogic-common}, \texttt{language-cumin} and \texttt{language-salt}.
+The first one contains common functionality for both \cumin{} and \salt{},
+like the representation of types.
+The other two packages deal with the two languages specifically,
+providing a parser, type checker and pretty printer, respectively.
+
+\subsection{Abstract syntax tree}
+
+The objects in \cumin{} and \salt{} are straightforwardly modeled
+as algebraic data types in Haskell.
+For instance, a type is represented like this.
+> data Type = TVar TVName | TCon TyConName [Type]
+A type is either a type variable or
+a type constructor applied to a list of types.
+Hence, |TCon "->" [TVar "a", TCon "Set" [TCon "Bool" []]]|
+is the representation of the \salt{} type |a -> Set Bool|.
+
+The representation of expressions is similarly given
+by introducing one constructor for each kind of expression
+from the previous sections.
+One notorious problem in compiler writing
+is the representation of bound variables.
+In our implementation, they are simply represented by their names.
+This causes a number of problems with substitution
+because free variables may be captured:
+Consider the two lambda terms |\x -> y| and |\y -> z|.
+Blindly substituting the former term for |z|
+yields |\y -> \x -> y|, which is incorrect
+as the variable |y| is not free anymore.
+For the correct solution |\y' -> \x -> y|, variables have to be renamed.
+There are more elaborate representations for capture avoidance,
+\eg deBruijn indices,
+but we opted against that complexity
+since the kind of substitution needed for our purposes,
+namely instantiating type variables on function invocations,
+can never lead to unwanted capturing.
+This is because type variable bindings are always on the top level,
+introduced by $\forall$, and cannot be nested.
+
+\subsection{Parser}
+
+Programs are given in the plain text format specified above.
+This textual representation needs to be parsed and converted to an AST.
+Instead of writing a parser by hand,
+we took the usual approach in the Haskell community
+and used a parser combinator library.
+The most well-known one is \texttt{parsec}
+but we chose \texttt{trifecta} by Edward Kmett
+because it has more readable and (subjectively) better error messages.
+As we wanted indentation-sensitive parsing,
+we used the library \texttt{indentation} \cite{indentation},
+which builds on top of \texttt{trifecta}.
+Parser combinators are a very readable and concise way of defining parsers.
+For instance, the parser for lambda abstraction
+\verb!\x :: t -> e! in \salt{} looks like this.
+(slightly modified for clarity)
+> lambdaE  =     ELam
+>          <$>  (symbol "\\" *> varIdent)
+>          <*>  (symbol "::" *> complexType)
+>          <*>  (symbol "->" *> expression)
+|*>| combines two parsers by running the first one and then the second one,
+returning the result of the second one.
+In this way, |lambdaE| first parses the bound variable,
+then its type, and then the expression.
+|ELam| constructs an expression AST from this data.
+The combinators |<$>| and |<*>| \enquote{lift} this operation
+to an operation on parsers, such that |lambdaE| is itself a parser
+that returns an expression.
+Parsers for other kinds of expressions look similar.
+
+After having collected all top-level and data type definitions,
+they have to be checked for duplicates.
+Giving different functions the same name is obviously ambiguous
+and such programs have to be rejected.
+Similarly, ADT names must be unique among each other
+and the same holds for constructor names.
+
+\subsection{Type checker}
+
+The type checker essentially implements the typing rules.
+It runs as a monadic computation to keep track of the type variables
+and bound variables that are in scope.\footnote{
+Monads can be used to thread a context through a computation,
+among other things.
+Explaining monads properly is beyond the scope of this thesis, however.}
+The syntax tree can simply be checked from the bottom up,
+composing the types of smaller expressions to larger ones,
+according to the typing rules.
+No complicated inference is necessary
+since the expressions have all the necessary type annotations
+to determine their type locally.
+(In contrast, a Haskell type inference would have to
+take global constraints into account.)
+As soon as an inconsistency is found,
+a type error is reported.
+
+The only thing that deserves a special remark is inference of |Data| types.
+This is done once at the beginning of type checking and the result is stored.
+Closely following the typing rules
+to determine the index set $I$ of type variables
+that need to be |Data| types would be inefficient
+because we would have to try all possible sets $I$.
+Instead, the following fixpoint iteration is used.
+We keep track of which ADTs are |Data| types and if so,
+which type variables have to be |Data| types for the ADT to be one.
+Let $I_{|A|}$ be this set of constraints for an ADT |A|.
+It corresponds to the judgment |dataIdx A I|.
+In the beginning, every ADT |A| is assumed to be a |Data| type
+without any constraints.
+In each iteration, for each ADT |A|,
+type variables that are constructor arguments
+are added to this set.
+For constructor arguments that are type constructors applied to other types,
+we first check
+that the type constructor is |Nat| or an ADT that is a |Data| type,
+according to the current knowledge.
+If not, |A| itself cannot be a |Data| type.
+Otherwise, we require the types to which the type constructor is applied
+to be |Data| types if the constraints of the type constructor require this.
+
+In this way, more and more necessary |Data| constraints are accumulated
+until a fixed point is reached.
+Then, the constraints are also sufficient.
+Such a fixed point is reached
+since the syntactic nesting level of data types is bounded.
+This gives the same result as the formal typing rules
+because it requires no more than the necessary |Data| constraints.
+
+\subsection{Pretty-printing}
+
+Besides a parser and type checker,
+we also implemented a pretty-printer,
+which transforms an AST into human-readable code.
+As for parsing, we use a combinator library for pretty printing,
+called \texttt{ansi-wl-pprint}.
+It is based on \cite{pretty} but with some extensions.
+This particular library allows colored output,
+which makes syntax highlighting in the terminal possible.
+The pretty-printer is aware of operator precedence,
+so it only uses parentheses where necessary.
+It is used for computer-generated programs, debugging
+and in the REPL of the interpreter. (see Chapter 3)
