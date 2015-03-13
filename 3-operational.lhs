@@ -23,7 +23,66 @@ Based on this,
 Stefan Mehner describes such a semantics
 for the variant of \cumin{} without algebraic data types,
 as in \cite{orig}.
-A few small changes and generalizations lead to the semantics below.
+A few small changes and generalizations lead to the semantics
+I describe below.
+Before that, I want to point out some properties of \cumin{}
+that may seem surprising at first.
+
+\section{Peculiarities of \cumin{}}
+
+To gain some intuition about nondeterminism in \cumin{},
+let us look at some examples of \cumin{} functions.
+
+> coin :: Nat
+> coin = choose<:Nat:> 0 1
+>
+> double :: Nat -> Nat
+> double x = x + x
+>
+> maybeDouble1 :: Nat -> Nat
+> maybeDouble1 = choose<:Nat -> Nat:> id<:Nat:> double
+>
+> maybeDouble2 :: Nat -> Nat
+> maybeDouble2 n = maybeDouble1 n
+
+Contrary to what one might expect,
+|coin + coin| and |double coin| behave differently.
+The first one evaluates to 0, 1 or 2
+as each of the summands can yield 0 or 1.
+The second expression can only evaluate to 0 or 2.
+This is because of an intricacy of \cumin{} (and Curry),
+called \emph{call-time choice}.
+It means that occurrences of |x| in the body of |double|
+always represent the same shared value.
+The choice for the desired value of the nondeterministic operation |coin|
+is made at call-time.
+However, the value itself is still computed lazily. (call-by-need)
+Call-time choice also affects let-bindings:
+|let x = coin in x + x| has exactly the same effect as |double coin|.
+In particular, one cannot substitute |coin| for |x| in |x + x|
+without changing the meaning.
+In contrast, this is fine in purely functional languages like Haskell.
+
+Coming from Haskell,
+it will also be surprising that |maybeDouble1| and |maybeDouble2|
+are \emph{not} equivalent.
+This shows that $\eta$-equivalence
+does not in general hold for \cumin{} (and Curry).
+The difference between these two functions can only be observed
+when used as a higher order function argument:
+|map<:Nat,Nat:> maybeDouble1 [1,3]<:Nat:>!|
+will evaluate to |[1,3]<:Nat:>!| or |[2,6]<:Nat:>!|.
+This is because when map is called,
+|maybeDouble1| is chosen to be |id<:Nat:>!| or |double|
+due to call-time choice.
+This means that it will act the same way on each list element.
+On the other hand,
+|map<:Nat,Nat:> maybeDouble1 [1,2]<:Nat:>!|
+will evaluate to
+|[1,3]<:Nat:>!|, |[1,6]<:Nat:>!|, |[2,3]<:Nat:>!| or |[2,6]<:Nat:>!|.
+The reason is
+that |maybeDouble2| is not \enquote{directly} nondeterministic,
+only when applied to an argument.
 
 \section{Formal Description}
 
