@@ -38,6 +38,7 @@
 %format Data = "\mathsf{Data}"
 %format Nat = "\mathsf{Nat}"
 %format C = "\mathsf{C}"
+%format D = "\mathsf{D}"
 %format A = "\mathsf{A}"
 %format Maybe = "\mathsf{Maybe}"
 %format List = "\mathsf{List}"

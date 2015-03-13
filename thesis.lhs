@@ -15,6 +15,8 @@
 
 \usepackage{todonotes}
 \usepackage{bussproofs}
+\usepackage{tabularx}
+\usepackage{ltablex}
 
 \usepackage{amsmath}
 \usepackage{amsfonts}

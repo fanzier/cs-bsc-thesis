@@ -2,19 +2,18 @@
 
 Having defined
 what well-formed \cumin{} programs look like,
-we want to define what they \emph{mean}.
-That means, we want to give them a \emph{semantics}.
+we want to define their meaning
+by giving them a \emph{semantics}.
 There are two kinds of semantics,
 \emph{denotational} and \emph{operational}.
 A denotational semantics describes
-the meaning of expressions
+the meaning of programs
 as mathematical objects.
 Denotational semantics for \cumin{} and \salt{}
 were given in \cite{orig}
 and were implemented by Fabian Thorand in his bachelor thesis.
 
-The other approach to the meaning of programming languages
-are operational semantics.
+The other approach are operational semantics.
 These describe the program's execution directly,
 instead of translating it to mathematical objects.
 An operational semantics for (a subset of) Curry can be found in \cite{bh},
@@ -56,9 +55,9 @@ It means that occurrences of |x| in the body of |double|
 always represent the same shared value.
 The choice for the desired value of the nondeterministic operation |coin|
 is made at call-time.
-However, the value itself is still computed lazily. (call-by-need)
+However, the value itself is still computed lazily (call-by-need).
 Call-time choice also affects let-bindings:
-|let x = coin in x + x| has exactly the same effect as |double coin|.
+|let x = coin in x + x| behaves exactly the same as |double coin|.
 In particular, one cannot substitute |coin| for |x| in |x + x|
 without changing the meaning.
 In contrast, this is fine in purely functional languages like Haskell.
@@ -89,13 +88,14 @@ only when applied to an argument.
 When evaluating \cumin{} expressions,
 we will have to keep track of variable assignments.
 
-\todo[inline]{Keep track of types in heap???}
-
 \begin{definition}[Heap]
-A \emph{heap} is a finite sequence of variable bindings
+A \emph{heap} is a mapping
 |[x_1 /-> e_1, .., x_n /-> e_n]|
-where each |e_i| is either an expression or a special marker |free :: tau|,
+where the |x_i|'s are variables and
+each |e_i| is either an expression or a special marker |free :: tau|,
 in which case |x_i| is called a \emph{logic variable} of type |tau|.
+Every variable that occurs in an expression |e_i|
+has to be in the heap as well.
 \end{definition}
 
 Every expression will be associated with a corresponding heap
@@ -103,7 +103,8 @@ that binds (at least) all the variables in the expression.
 
 \begin{definition}[Heap Expression Pair]
 A \emph{heap expression pair} |Delta : e| is
-a heap |Delta| together with an expression |e|.
+a heap |Delta| together with an expression |e|
+such that every variable occurring in |e| is in |Delta|.
 \end{definition}
 
 The operational semantics will describe
@@ -114,30 +115,41 @@ when an expression is called evaluated.
 The following two notions will be useful:
 
 \begin{definition}[Normal Forms]
-An expression |e| is said to be
+An expression |e| (associated with a heap) is said to be
 \begin{enumerate}
-\item in \emph{flat normal form}
-if |e| is a literal
-or a partial or full application
-of a data constructor to heap variables
+\item in \emph{flat normal form (FNF)}
+if |e| is a literal,
+a partial or full application
+of a data constructor to heap variables,
 or a partial application
 of a top-level function |f| to heap variables.
-\enquote{Partial} here means that the number of arguments of |f| in |e|
+\enquote{Partial} here means that the number of arguments given to |f|
 is strictly smaller than the number of arguments
 in the definition of the function |f|.
 \item a \emph{value}
 if |e| is in flat normal form or a logic variable.
-\item in \emph{reduced normal form}
-if |e| is in flat normal form
-and each argument of the data constructor or top-level function
-is itself in reduced normal form.
-Reducing an expression to this normal form is also called \emph{forcing}.
+\item in \emph{reduced normal form (RNF)}
+if |e| is a literal,
+a partial or full application
+of a data constructor to expressions in reduced normal form,
+or a partial application
+of a top-level function to expressions in reduced normal form.
 \end{enumerate}
 \end{definition}
 
-\todo[inline]{Add examples!}
+As an illustration, let us look at some expressions
+in the context of the following heap.
+> Delta := [ choice /-> free :: Bool, x /-> free :: Nat, y /-> x + x, n /-> Nil<:Bool:> ]
+In this environment, |choice| is a value but not in FNF or RNF.
+Furthermore, |Cons<:Bool:> choice n| is in FNF and thus also a value
+but still not in RNF.
+On the other hand, |Cons<:Bool:> True Nil<:Bool:>!| is in RNF
+but neither in FNF nor a value
+since |True| and |Nil<:Bool:>!| are not variables.
+Additionally, there are terms like |2|, |Nil<:Nat:>!|, or |map<:Bool,Nat:>!|
+that are values, in FNF and in RNF.
 
-There are three kinds of evaluation:
+For each normal form, there is a corresponding evaluation strategy:
 \begin{enumerate}
 \item \emph{Logical evaluation},
 denoted by |~>*|,
@@ -154,80 +166,80 @@ How can these normal forms be obtained?
 This is done using the rules below.
 The rationale behind them is explained in the next section.
 
-\begin{enumerate}
-\item[Val] 
-\AxiomC{|Delta : v ~>* Delta : v|}
+\begin{tabularx}{\textwidth}{r >{\setstretch{1.8}}X}
+{[Val]}
+&\AxiomC{|Delta : v ~>* Delta : v|}
 \DisplayProof
 \hfill if |v| is a value \wrt |Delta|
-
-\item[Lookup]
-\AxiomC{|Delta: e ~>* Delta' : v|} 
-\UnaryInfC{|Delta[x /-> e]Omega: x ~>* Delta'[x /-> v]Omega : v|}
+\\[1em]
+{[Lookup]}
+&\AxiomC{|Delta: e ~>* Delta' : v|}
+\UnaryInfC{|Delta[x /-> e]: x ~>* Delta'[x /-> v] : v|}
 \DisplayProof
 \hfill unless |x| is a logic variable
-
-\item[Let]
-\AxiomC{|Delta[y /-> e_1] : e_2[y/x] ~>* Delta' : v|}
+\\[1em]
+{[Let]}
+&\AxiomC{|Delta[y /-> e_1] : e_2[y/x] ~>* Delta' : v|}
 \UnaryInfC{|Delta : let x = e_1 in e_2 ~>* Delta' : v|}
 \DisplayProof
 \hfill where |y| is fresh
-
-\item[Free]
-\AxiomC{|Delta[y /-> free :: tau] : e[y/x] ~>* Delta' : v|}
+\\[1em]
+{[Free]}
+&\AxiomC{|Delta[y /-> free :: tau] : e[y/x] ~>* Delta' : v|}
 \UnaryInfC{|Delta : let x :: tau free in e ~>* Delta' : v|}
 \DisplayProof
 \hfill where |y| is fresh
-
-\item[Fun]
-\AxiomC{|Delta : e[vec (tau_m/alpha_m),vec (y_n/x_n)] ~>* Delta' : v|}
+\\[1em]
+{[Fun]}
+&\AxiomC{|Delta : e[vec (tau_m/alpha_m),vec (y_n/x_n)] ~>* Delta' : v|}
 \UnaryInfC{|Delta : f <:vec tau_m:> (vec y_n) ~>* Delta' : v|}
 \DisplayProof
 \hfill for a top-level function
 |f ::forall alpha_1 ..  alpha_m . tau; f(vec x_n) = e|
-
-\item[Flatten]
-\AxiomC{|Delta: let y = e in phi y ~>* Delta' : v|}
+\\[1em]
+{[Flatten]}
+&\AxiomC{|Delta: let y = e in phi y ~>* Delta' : v|}
 \UnaryInfC{|Delta : phi e ~>* Delta' : v|}
 \DisplayProof
 \hfill where |phi| is in flat normal form and |y| fresh
-
-\item[Apply]
-\AxiomC{|Delta : e_1 ~>* Delta' : phi |}
+\\[1em]
+{[Apply]}
+&\AxiomC{|Delta : e_1 ~>* Delta' : phi |}
 \AxiomC{|Delta' : phi e_2 ~>* Delta'' : v|}
 \BinaryInfC{|Delta : e_1 e_2 ~>* Delta'' : v|}
 \DisplayProof
-
-\item[Plus]
-\AxiomC{|Delta : e_1 ~> Delta' : n_1|}
+\\[1em]
+{[Plus]}
+&\AxiomC{|Delta : e_1 ~> Delta' : n_1|}
 \AxiomC{|Delta' : e_2 ~> Delta'' : n_2|}
 \BinaryInfC{|Delta : e_1 + e_2 ~>* Delta'' : n|}
 \DisplayProof
 \hfill for literals |n_1|, |n_2| and |n=n_1+n_2|
-
-\item[EqNat]
-\AxiomC{|Delta : e_1 ~> Delta' : n_1|}
+\\[1em]
+{[EqNat]}
+&\AxiomC{|Delta : e_1 ~> Delta' : n_1|}
 \AxiomC{|Delta' : e_2 ~> Delta'' : n_2|}
 \BinaryInfC{|Delta : e_1 == e_2 ~>* Delta'' : b|}
 \DisplayProof
 \hfill where |n_1,n_2| are literals
 and |b| is |True| if |n_1=n_2|, |False| otherwise.
-
-\item[Eq]
-\AxiomC{|Delta : e_1 ~> Delta' : C<:vec (tau_m):> (vec x_n)|}
+\\[1em]
+{[Eq]}
+&\AxiomC{|Delta : e_1 ~> Delta' : C<:vec (tau_m):> (vec x_n)|}
 \AxiomC{|Delta' : e_2 ~> Delta_0 : C<:vec (tau_m):> (vec y_n)|}
 \AxiomC{|vec (Delta_nm1 : x_n == y_n ~> Delta_n : True)|}
 \TrinaryInfC{|Delta : e_1 == e_2 ~> Delta_n : True|}
 \DisplayProof
-
-\item[NEqCon]
-\AxiomC{|Delta : e_1 ~> Delta' : C<:vec (tau_m):> (vec x_n)|}
+\\[1em]
+{[NEqCon]}
+&\AxiomC{|Delta : e_1 ~> Delta' : C<:vec (tau_m):> (vec x_n)|}
 \AxiomC{|Delta' : e_2 ~> Delta'' : D<:vec (tau_m):> (vec y_n)|}
 \BinaryInfC{|Delta : e_1 == e_2 ~> Delta'' : False|}
 \DisplayProof
 \hfill where |C| and |D| are different constructors.
-
-\item[NEq]
-\AxiomC{|Delta : e_1 ~> Delta' : C<:vec (tau_m):> (vec x_n)|}
+\\[1em]
+{[NEq]}
+&\AxiomC{|Delta : e_1 ~> Delta' : C<:vec (tau_m):> (vec x_n)|}
 \AxiomC{|Delta' : e_2 ~> Delta_0 : C<:vec (tau_m):> (vec y_n)|}
 \AxiomC{|vec (Delta<:i-1:> : x_i == y_i ~> Delta_i : b_i)|}
 \TrinaryInfC{|Delta : e_1 == e_2 ~> Delta_i : False|}
@@ -235,69 +247,66 @@ and |b| is |True| if |n_1=n_2|, |False| otherwise.
 \hfill where $i \in \{1,\dots,n\}$
 and |b_j| is |True| for all $j \in \{1,\dots,i-1\}$
 but |b_i| is |False|.
-
-\item[CaseCon]
-\AxiomC{|Delta : e ~> Delta' : C<:vec tau_m:> (vec y_n)|}
+\\[1em]
+{[CaseCon]}
+&\AxiomC{|Delta : e ~> Delta' : C<:vec tau_m:> (vec y_n)|}
 \AxiomC{|Delta' : e'[vec y_n / vec x_n] ~>* Delta'' : v|}
 \BinaryInfC{|Delta : case e of { ..; C (vec x_n) -> e'; .. } ~>* Delta'' : v|}
 \DisplayProof
-\hfill where |C| is the only matching constructor
-in the case alternatives.
-
-\item[CaseVar]
-\AxiomC{|Delta : e ~> Delta' : C<:vec tau_m:> (vec x_n)|}
+\\[1em]
+{[CaseVar]}
+&\AxiomC{|Delta : e ~> Delta' : C<:vec tau_m:> (vec x_n)|}
 \AxiomC{|Delta'[x /-> C<:vec tau_m:> (vec x_n)] : e ~>* Delta'' : v|}
 \BinaryInfC{|Delta : case e of { ..; x -> e } ~>* Delta'' : v|}
 \DisplayProof
 \hfill only if none of the constructor patterns
 before the catch-all pattern |x| matched the constructor |C|.
+\end{tabularx}
 
-\bigskip
-
-\item[FNF]
-\AxiomC{|Delta : e ~>* Delta' : v|}
+\begin{tabularx}{\textwidth}{r >{\setstretch{1.8}}X}
+{[FNF]}
+&\AxiomC{|Delta : e ~>* Delta' : v|}
 \UnaryInfC{|Delta : e ~> Delta' : v|}
 \DisplayProof
 \hfill where |v| is in flat normal form
-
-\item[Guess$_n$]
-\AxiomC{|Delta: e ~>* Delta'[x :: Nat /-> free]Omega : x|}
-\UnaryInfC{|Delta: e ~> Delta'[x::Nat /-> n]Omega : n |} 
+\\[1em]
+{[Guess$_n$]}
+&\AxiomC{|Delta: e ~>* Delta'[x :: Nat /-> free] : x|}
+\UnaryInfC{|Delta: e ~> Delta'[x::Nat /-> n] : n |}
 \DisplayProof
 \hfill for any literal |n|
-
-\item[Guess$_|C|$]
-\AxiomC{|Delta: e ~>* Delta'[x /-> free :: A rho_1 .. rho_m]Omega : x|}
-\UnaryInfC{|Delta: e ~> Delta'[ vec (y_n /-> free :: tau_n), x /-> C<:rho_1, .., rho_m:> (vec y_n)]Omega : C<:rho_1, .., rho_m:> (vec y_n)|} 
+\\[1em]
+{[Guess$_|C|$]}
+&\AxiomC{|Delta: e ~>* Delta'[x /-> free :: A (vec rho_m)] : x|}
+\UnaryInfC{|Delta: e ~> Delta'[ vec (y_n /-> free :: tau_n[vec (rho_m/alpha_m)]), x /-> C<:vec rho_m:> (vec y_n)] : C<:vec rho_m:> (vec y_n)|} 
 \DisplayProof
-\hfill for any constructor |C| of the ADT |A|
-and where |C<:rho_1,..,rho_m:>| has argument types |tau_n|
-and |vec y_n| are fresh variables
-\end{enumerate}
+\hfill for any constructor |C| of the ADT |A| with argument types |tau_n|
+and where |vec y_n| are fresh variables
+\end{tabularx}
 
-\begin{enumerate}
-\item[RNF]
-\AxiomC{|Delta : e ~> Delta' : v|}
+\begin{tabularx}{\textwidth}{r >{\setstretch{1.8}}X}
+{[RNF]}
+&\AxiomC{|Delta : e ~> Delta' : v|}
 \UnaryInfC{|Delta : e ~>! Delta' : v|}
 \DisplayProof
 \hfill where |v| is in reduced normal form
-
-\item[Force]
-\AxiomC{|Delta : e ~> Delta_0 : f<:rho_1, .., rho_m:> y_1 .. y_n|}
+\\[1em]
+{[Force]}
+&\AxiomC{|Delta : e ~> Delta_0 : f<:vec rho_m:> (vec y_n)|}
 \AxiomC{|Delta_0 : y_1 ~>! Delta_1 : e_1|}
 \AxiomC{\dots}
 \AxiomC{|Delta_nm1 : y_n ~>! Delta_n : e_n|}
-\QuaternaryInfC{|Delta: e ~>! Delta_n : f<:rho_1, .., rho_m:> e_1 .. e_n|} 
+\QuaternaryInfC{|Delta: e ~>! Delta_n : f<:vec rho_m:> (vec e_n)|}
 \DisplayProof
-\hfill where |f<:rho_1,..,rho_m:>| is a constructor or top-level function
-\end{enumerate}
+\hfill where |f| is a constructor or top-level function
+\end{tabularx}
 
 \section{Explanation of the Semantics}
 
-First note that the evaluation of an expression is not unique.
-Some expressions even can evaluate to infinitely many values
+First note that the evaluation of an expression is not unique
 -- that is what non-determinism is about, after all.
-A trivial example for that would be
+Some expressions can even evaluate to infinitely many values.
+A simple example for that would be
 \[
 \AxiomC{|[x /-> free :: Nat] : x ~>* [x /-> free :: Nat] : x|}
 \LeftLabel{\text{Guess$_n$}}
@@ -307,7 +316,7 @@ A trivial example for that would be
 which works for any natural number |n|.
 
 On the other hand, not every expression has a normal form.
-A trivial example is |failed<:tau:>|,
+A trivial example is |failed<:tau:>!|,
 which simply has no applicable reduction rule.
 This makes sense
 because this expression denotes failure.
@@ -325,10 +334,11 @@ it does not need to be evaluated further.
   evaluate the expression bound by the variable.
   Additionally, the heap must be updated
   to ensure sharing.
-  This way, we want to avoid recomputing the same expression repeatedly.
+  This avoids recomputing the same expression repeatedly.
   Also, if the heap were not updated,
   a variable could non-deterministically evaluate to different values
-  depending on where it is used.
+  depending on where it is used,
+  but instead, call-time choice is desired.
   \item \textbf{Let.}
   To evaluate a |let| binding,
   the bound variable and expression are added to the heap
@@ -349,8 +359,7 @@ it does not need to be evaluated further.
   of the function definition,
   with variables and types properly substituted.
   The reason that the arguments must be variables is
-  to ensure that the arguments are shared.
-  This strately is known as \emph{call-time choice}.
+  to ensure call-time choice.
   \item \textbf{Flatten.}
   To be able to apply the previous rule,
   all function arguments must be variables.
@@ -362,13 +371,13 @@ it does not need to be evaluated further.
   even if all arguments are already variables.
   This unnecessary indirection is computationally undesirable
   but not forbidden according to this semantics.
-  However, it is avoided by the interpreter.
+  However, it is avoided in the implementation.
   \item \textbf{App.}
   The last rule for function application can always be applied.
   (However, it is only useful if the other rules don't make progress.)
-  If the function is not already a top level function or constructor
+  If the function is not already a top level function or constructor,
   but a more complex expression,
-  this rule allows the it to be evaluated to flat normal form.
+  this rule allows it to be evaluated to flat normal form.
   This way, after possibly having applied Flatten several times,
   the expression will be a value or have the shape required by Fun.
   \end{itemize}
@@ -400,7 +409,7 @@ How evaluation continues depends on the result.
   If the constructors match
   but some of their arguments are not equal,
   then evaluation stops at the first pair of arguments to differ.
-  The rest of the arguments is \emph{not} evaluated.
+  The remaining arguments are \emph{not} evaluated.
   The comparison yields |False|.
   \item \textbf{NEqCon.}
   If the constructors do not match,
@@ -411,10 +420,10 @@ How evaluation continues depends on the result.
 In a case expression,
 the first part to be evaluated is the scrutinee.
 It has to be evaluated \emph{functionally}
-since logic variables do not allow case analysis.
-Because the type of the scrutinee is a data type,
+since logic variables do not admit case analysis.
+Since the type of the scrutinee is a data type,
 it must be a fully applied constructor |C|.
-One of the following two rules is applicable.
+One of the following two rules can be applicable.
   \begin{itemize}
   \item \textbf{CaseCon.}
   If one of the patterns in the case alternatives matches the constructor |C|,
@@ -449,13 +458,13 @@ The value of the variable is updated on the heap, as before.
 If an expression evaluates to a logic variable
 with an algebraic data type,
 its flat normal form is given by any constructor |C| of the ADT,
-fully applied to logic variables that are added to the heap.
+fully applied to new logic variables that are added to the heap.
 The value of the original variable is updated on the heap, as before.
 \end{itemize}
 
 These last two rules are the source of non-determinism.
 Which constructor or which natural number is chosen for a logic variable
-is not determined;
+is not determined,
 in contrast to the other rules
 where choices do not affect the result.
 
