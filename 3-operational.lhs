@@ -96,6 +96,10 @@ each |e_i| is either an expression or a special marker |free :: tau|,
 in which case |x_i| is called a \emph{logic variable} of type |tau|.
 Every variable that occurs in an expression |e_i|
 has to be in the heap as well.
+
+Given two heaps |Delta, Delta'| with disjoint variables,
+one can form their \emph{union}.
+It is written by juxtaposition: |Delta Delta'|.
 \end{definition}
 
 Every expression will be associated with a corresponding heap
@@ -486,7 +490,183 @@ The result is in reduced normal form.
 
 \section{Examples}
 
-\todo[inline]{Add examples!}
+In order to understand the evaluation rules better,
+it is instructive to look at some examples.
+Starting simple, let us look at the logical evaluation of |double 1|.
+\begin{prooftree}
+  \AxiomC{|[y /-> 1] : y ~>* [y /-> 1] : 1 |}
+  \LeftLabel{Lookup}
+  \UnaryInfC{|[y /-> 1] : y ~>* [y /-> 1] : 1 |}
+  \AxiomC{|[y /-> 1] : y ~>* [y /-> 1] : 1 |}
+  \LeftLabel{Lookup}
+  \UnaryInfC{|[y /-> 1] : y ~>* [y /-> 1] : 1 |}
+\LeftLabel{Plus}
+\BinaryInfC{|[y /-> 1] : y + y ~>* [y /-> 1] : 2|}
+\LeftLabel{Fun}
+\UnaryInfC{|[y /-> 1] : double y ~>* [y /-> 1] : 2|}
+\LeftLabel{Let}
+\UnaryInfC{|[] : let x = 1 in double x ~>* [y /-> 1] : 2|}
+\LeftLabel{Flatten}
+\UnaryInfC{|[] : double 1 ~>* [y /-> 1] : 2|}
+\end{prooftree}
+
+Nondeterminism can lead to more than one results.
+One of the simplest possible examples is
+|let x :: Bool free in x|.
+Its flat normal forms are |False| and |True|:
+\begin{prooftree}
+\AxiomC{|[y /-> free :: Bool] : y ~>* [y /-> free :: Bool] : y|}
+\LeftLabel{Free}
+\UnaryInfC{|[] : let x :: Bool free in x ~>* [y /-> free :: Bool] : y|}
+\LeftLabel{Guess$_|False|$}
+\UnaryInfC{|[] : let x :: Bool free in x ~> [y /-> False] : False|}
+\end{prooftree}
+\begin{prooftree}
+\AxiomC{|[y /-> free :: Bool] : y ~>* [y /-> free :: Bool] : y|}
+\LeftLabel{Free}
+\UnaryInfC{|[] : let x :: Bool free in x ~>* [y /-> free :: Bool] : y|}
+\LeftLabel{Guess$_|True|$}
+\UnaryInfC{|[] : let x :: Bool free in x ~> [y /-> True] : True|}
+\end{prooftree}
+
+\subsection{The coin example}
+
+As a more complex instance, consider |coin|.
+As an abbreviation, let |Delta := [x' /-> 0, y' /-> 1]|
+and |Delta' := Delta[c' /-> False]|.
+\begin{prooftree}
+  \AxiomC{\dots}
+  \UnaryInfC{|[] : choose<:Bool:> 0 ~>* [x' /-> 0] : choose<:Bool:> x'|}
+  \AxiomC{\dots}
+  \UnaryInfC{|[x' /-> 0] : choose<:Bool:> x' 1 ~>* Delta' : 0|}
+\LeftLabel{Apply}
+\BinaryInfC{|[] : choose<:Bool:> 0 1 ~>* Delta' : 0|}
+\LeftLabel{Fun}
+\UnaryInfC{|[] : coin ~>* [c' /-> False] : 0|}
+\end{prooftree}
+where the left subderivation continues like this:
+\begin{prooftree}
+  \AxiomC{|[x' /-> 0] : choose<:Bool:> x' ~>* [x' /-> 0] : choose<:Bool:> x'|}
+  \LeftLabel{Let}
+  \UnaryInfC{|[] : let x = 0 in choose<:Bool:> x ~>* [x' /-> 0] : choose<:Bool:> x'|}
+\LeftLabel{Flatten}
+\UnaryInfC{|[] : choose<:Bool:> 0 ~>* [x' /-> 0] : choose<:Bool:> x'|}
+\end{prooftree}
+and the right one like this:
+\begin{prooftree}
+    \AxiomC{|Delta[c' /-> free :: Bool] : c ~>* Delta[c' /-> free :: Bool] : c|}
+    \LeftLabel{Guess$_|False|$}
+    \UnaryInfC{|Delta[c' /-> free :: Bool] : c ~> Delta' : False|}
+    \AxiomC{|Delta' : 0 ~>* Delta' : 0|}
+  \LeftLabel{CaseCon}
+  \BinaryInfC{|Delta[c' /-> free :: Bool] : case c of { False -> 0; .. } ~>* Delta' : 0|}
+  \LeftLabel{Free}
+  \UnaryInfC{|Delta : let c :: Bool free in case c of { False -> 0; True -> 1 } ~>* Delta' : 0|}
+  \LeftLabel{Fun}
+  \UnaryInfC{|Delta : choose<:Bool:> x' y' ~>* Delta' : 0|}
+  \LeftLabel{Let}
+  \UnaryInfC{|[x' /-> 0] : let y = 1 in choose<:Bool:> x' y ~>* Delta' : 0|}
+\LeftLabel{Flatten}
+\UnaryInfC{|[x' /-> 0] : choose<:Bool:> x' 1 ~>* Delta' : 0|}
+\end{prooftree}
+
+A completely analogous derivation
+that uses Guess$_|True|$ instead of Guess$_|False|$
+yields the other evaluation |[] : coin ~>* [c' /-> True] : 1|.
+
+\subsection{Call-time choice}
+
+In the introduction of this chapter,
+we discussed the examples |coin + coin| vs.\ |let c = coin in c + c|.
+Let us find out how the difference manifests itself.
+\begin{prooftree}
+    \AxiomC{\dots}
+    \UnaryInfC{|[] : coin ~>* Delta : i|}
+  \LeftLabel{FNF}
+  \UnaryInfC{|[] : coin ~> Delta : i|}
+    \AxiomC{\dots}
+    \UnaryInfC{|Delta : coin ~>* Delta' : j|}
+  \LeftLabel{FNF}
+  \UnaryInfC{|Delta : coin ~> Delta' : j|}
+\LeftLabel{Plus}
+\BinaryInfC{|[] : coin + coin ~>* Delta' : i + j|}
+\end{prooftree}
+This derivation works for all $i = 0, 1$ and $j = 0, 1$.
+Thus, the possible results are 0, 1 and 2.
+By contrast, consider the derivation for |let c = coin in c + c|.
+\begin{prooftree}
+    \AxiomC{\dots}
+    \UnaryInfC{|[c' /-> coin] : coin ~> Delta[c' /-> i] : i|}
+    \LeftLabel{Lookup}
+    \UnaryInfC{|[c' /-> coin] : c' ~>* Delta[c' /-> i] : i|}
+  \LeftLabel{FNF}
+  \UnaryInfC{|[c' /-> coin] : c' ~> Delta[c' /-> i] : i|}
+    \AxiomC{|Delta[c' /-> i] : c' ~>* Delta[c' /-> i] : i|}
+  \LeftLabel{FNF}
+  \UnaryInfC{|Delta[c' /-> i] : c' ~> Delta[c' /-> i] : i|}
+\LeftLabel{Plus}
+\BinaryInfC{|[c' /-> coin] : c' + c' ~>* Delta[c' /-> i] : i + i|}
+\LeftLabel{Let}
+\UnaryInfC{|[] : let c = coin in c + c ~>* Delta[c' /-> i] : i + i|}
+\end{prooftree}
+Again, this works for all $i = 0, 1$.
+But the two summands are not independent in this case.
+Hence, the only possible results are 0 and 2.
+
+\subsection{Reduced normal form}
+
+So far, we have not dealt with |~>!|.
+For sake of completeness, we will analyze
+how |let y :: List Bool free in y| can evaluate to
+|Cons<:Bool:> True Nil<:Bool:>!|.
+For lack of space, the heaps are omitted.
+Nevertheless, the idea should become clear.
+\begin{prooftree}
+    \AxiomC{(as above \dots)}
+    \LeftLabel{Free}
+    \UnaryInfC{|let .. ~>* y'|}
+  \LeftLabel{Guess$_|Cons|$}
+  \UnaryInfC{|let .. ~> Cons<:Bool:> x xs|}
+    \AxiomC{\dots}
+    \LeftLabel{FNF}
+    \UnaryInfC{|x ~>* x|}
+    \LeftLabel{Guess$_|True|$}
+    \UnaryInfC{|x ~> True|}
+  \LeftLabel{RNF}
+  \UnaryInfC{|x ~>! True|}
+    \AxiomC{\dots}
+    \LeftLabel{FNF}
+    \UnaryInfC{|xs ~>* xs|}
+    \LeftLabel{Guess$_|Nil|$}
+    \UnaryInfC{|xs ~> Nil<:Bool:>|}
+  \LeftLabel{RNF}
+  \UnaryInfC{|xs ~>! Nil<:Bool:>|}
+\LeftLabel{Force}
+\TrinaryInfC{|let x :: List Bool free in x ~>! Cons<:Bool:> True Nil<:Bool:>|}
+\end{prooftree}
+
+The different choices of the applied Guess rules
+can be visualized in a tree like this.
+
+\begin{center}
+\small
+\Tree [.|free :: List Bool|
+  [.|Nil<:Bool:>| ]
+  [.|Cons<:Bool:> (free :: Bool) (free :: List Bool)|
+    [.|Cons<:Bool:> False (free :: List Bool)|
+      [.$\quad\vdots\quad$ ]
+      [.$\quad\vdots\quad$ ]
+    ]
+    [.|Cons<:Bool:> True (free :: List Bool)|
+      [.|Cons<:Bool:> True Nil<:Bool:>| ]
+      [.|Cons<:Bool:> True (Cons<:Bool:> ..)|
+        [.$\quad\vdots\quad$ ]
+        [.$\quad\vdots\quad$ ]
+      ]
+    ]
+  ]
+]
+\end{center}
 
 \section{Implementation}
 

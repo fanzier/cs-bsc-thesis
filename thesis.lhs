@@ -15,6 +15,8 @@
 
 \usepackage{todonotes}
 \usepackage{bussproofs}
+\usepackage{tikz}
+\usepackage{tikz-qtree}
 \usepackage{tabularx}
 \usepackage{ltablex}
 
