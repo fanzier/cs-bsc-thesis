@@ -670,4 +670,305 @@ can be visualized in a tree like this.
 
 \section{Implementation}
 
-\section{Evaluation}
+\subsection{Nondeterminism and Search}
+
+While the operational semantics formalizes
+which evaluations are valid,
+it does not directly specify
+how all the nondeterministic results of a computation can be found,
+\ie what constructors should be chosen in the Guess rules
+and in what order.
+As we have seen in the previous section,
+trees are a natural representation for this.
+
+The implementation of the semantics is thus split into two components:
+actual evaluation of an expression,
+which generates such an evaluation tree,
+and traversing this tree,
+for example using depth-first or breadth-first search.
+This may sound inefficient at first,
+as only parts of the generated tree may be actually needed.
+However, since Haskell is a lazy language,
+the tree is generated on demand only,
+while being traversed.
+In this way, laziness allows decoupling evaluation and search.
+
+\subsection{Evaluation}
+
+Before explaining the actual implementation,
+I have to talk about how the various objects and normal forms
+where modeled as data types.
+
+A heap is represented as a standard map data structure (Data.Map)
+with variable names (strings) as keys and expressions as values.
+The normal forms are algebraic data types, as expected.
+\begin{code}
+data FNF
+  = PartialApp BindingName [Type] [VarName]
+  | ConValue DataConName [Type] [VarName]
+  | Literal Lit
+
+data Value
+  = Fnf FNF
+  | Logic VarName Type
+\end{code}
+Furthermore, there are (among others) the following evaluation functions.
+> evaluateFunctionally :: Exp -> EvalT TreeM FNF
+> evaluateLogically :: Exp -> EvalT TreeM Value
+These functions accept a \cumin{} expression
+and produce a tree with all possible results at the leaves,
+flat normal forms and values, respectively.
+|EvalT| is a (state and reader) monad transformer
+that manages the state of the computation,
+namely the heap and a counter for generating fresh names,
+and an environment with the data types and functions of the \cumin{} program.
+|TreeM| is a monad that supports nondeterminism
+by building an evaluation tree.
+|EvalT TreeM| is a monad
+that combines these stateful and nondeterministic effects.
+This way, one does not have to manage
+the state and trees explicitly throughout the computation;
+it is instead handled by the monadic bind operation.
+
+As for the implementation of the evaluation rules,
+there are some details to be discussed.
+First, the rules often require fresh variables to be added to the heap.
+To guarantee that all variables are fresh,
+every new variable name includes the current value of a counter
+which is increased afterwards,
+hence ensuring that all generated variables are unique.
+Avoiding variable capture (cf. Section 2.5.1) on substitution
+has to be taken care of as well.
+In this case, however, it cannot happen
+since one only ever substitutes fresh variables for existing ones.
+
+In most cases, the shape of an expression determines
+the next evaluation rule to apply,
+for instance, if it is an addition,
+only the Plus rule can be applied.
+In other cases, like in case expressions or equality tests,
+parts of the expression have to be evaluated,
+and then there is only one rule that matches.
+Logic variables are inherently non-deterministic,
+so in this case more than one rule is applicable,
+and the evaluation tree branches.
+The only remaining case is function application.
+The rules Fun, Apply, Flatten can be employed
+and there may be more than one choice.
+The implementation uses the following strategy:
+Apply the Fun rule first, whenever possible.
+If not, try the Apply rule.
+In case none of those worked,
+use the Flatten rule.
+This strategy always makes progress. (cf. Section 3.3)
+
+All in all, logical evaluation proceeds like this:
+It checks whether the expression is already a value,
+and if so, does nothing. (Val rule)
+Otherwise, depending on the shape of the expression,
+apply a suitable rule according to the details
+in the previous paragraph.
+Functional evaluation invokes logical evaluation first.
+If the result is already in flat normal form,
+nothing is to be done. (FNF rule)
+Otherwise, the result is a logic variable
+which results in a branching of the evaluation tree,
+one new branch for each applicable Guess rule.
+Evaluation to reduced normal form uses functional evaluation.
+If the result is in RNF, nothing is to be done. (RNF rule)
+Otherwise, the subexpressions are recursively forced. (Force rule)
+
+One more thing to discuss is guessing natural numbers.
+One could simply generate them like this:
+\begin{center}
+\small
+\Tree [.|free :: Nat|
+  [.|0| ]
+  [.|1| ]
+  [.|2| ]
+  [.|..| ]
+]
+\end{center}
+The disadvantage is that breadth-first search will not
+find all solutions on such a tree
+since it contains a node with infinitely many children.
+As completeness of BFS is desirable,
+the program will instead generate a tree
+with only finitely many nodes on each level,
+namely the numbers with $i$ bits on the $i$-th level.
+This tree also yields the same result,
+independently of whether BFS or DFS is used:
+\begin{center}
+\small
+\Tree [.|free :: Nat|
+  [.|0| ]
+  [. {$\geq 1$ bits}
+    [. |1| ]
+    [. {$\geq 2$ bits}
+      [. |2| ]
+      [. |3| ]
+      [. {$\geq 3$ bits}
+        [. |4| ]
+        [. |5| ]
+        [. |6| ]
+        [. |7| ]
+        [. $\vdots$ ]
+      ]
+    ]
+  ]
+]
+\end{center}
+
+\subsection{Trees and traversals}
+
+An evaluation tree is represented by the data type
+> data Tree a = Leaf a | Branches [Tree a]
+It can be made a monad\footnote{
+In fact, this type constructor represents
+the free monad over the list functor.}
+where |return| creates a leaf
+and the bind operation |>>=| performs substitution on the leaves.
+The operation that is important for nondeterminism is given by the function
+> branch :: [a] -> Tree a
+> branch = Branches . map Leaf
+which creates a tree with the given leaves.
+Failure is represented by a tree without leaves:
+> failure :: Tree a
+> failure = branch []
+However, this tree structure performed rather badly.
+Profiling the application revealed
+that most of the time was spent performing substitution on the tree.
+This takes a lot of time for high trees
+since it has to be traversed completely to get to the leaves.
+This problem turns out to be well-known. \cite{codensity}
+The solution is called the \emph{codensity transformation}.
+It works by \enquote{focusing} on the leaves of the tree
+to speed up substitution.
+The transformed type looks like this:
+> newtype CTree a = CTree (forall r. (a -> Tree r) -> Tree r)
+It represents the tree by a function
+taking a function of type |a -> Tree r|
+which, when applied to the leaves of the |CTree a|,
+yields a |Tree r|.
+It can be given a monad instance
+that performs much better.
+For certain evaluation trees with lots of branches,
+it was more than ten times faster.
+Such a |CTree| is then converted to a |Tree|,
+which can be traversed.
+
+I implemented four kinds of traversals:
+breadth-first search and depth-first search,
+each with and without a depth limit.
+Each of them has advantages and drawbacks.
+Depth-first search is incomplete:
+In many infinite trees,
+not every solution will be found in finite time.
+Breadth-first search is complete
+but uses more memory.
+A more detailed comparison of the two
+can be found in the \enquote{Assessment} section.
+
+\subsection{REPL}
+
+As an interface to the evaluation functions,
+I created a REPL (read-evaluate-print-loop)
+where the user can enter expressions
+and have them evaluated.
+Before talking about the details,
+let us have a look at an example session.
+The REPL was loaded with the file \verb!Test.cumin! as a command-line argument.
+{\small
+\begin{verbatim}
+Type ":h" (without quotes) for help.
+Loaded module `Test`.
+> :h
+List of commands:
+ * :h, :help
+        Show this help text.
+ * :q, :quit
+        Quit the program.
+ * :r, :reload
+        Reload the current module.
+ * :f <expr>, :force <expr>, <expr>
+        Force the expression <expr> to reduced normal form.
+ * :e <expr>, :eval <expr>
+        Evaluate the expression <expr> to flat normal form.
+ * :g, :get
+        List all configurable properties and their current values.
+ * :s <prop>=<val>, :set <prop>=<val>
+        Set property <prop> to value <val>. For details use ':get'.
+> 1 + 1
+ :: Nat
+ = 2
+
+CPU time elapsed: 0.000 s
+> let x :: Bool free in x
+ :: Bool
+ = False<::>
+ = True<::>
+
+CPU time elapsed: 0.000 s
+> :get
+Current settings:
+ * depth=inf:
+   The search depth limit. Values: inf, 0, 1, 2, ...
+ * strategy=bfs:
+   The search strategy: bfs, dfs
+> :set depth=3
+> :get
+Current settings:
+ * depth=3:
+   The search depth limit. Values: inf, 0, 1, 2, ...
+ * strategy=bfs:
+   The search strategy: bfs, dfs
+> let x :: List Bool free in x
+ :: List Bool
+ = Nil<:Bool:>
+ = Cons<:Bool:> False<::>
+     Nil<:Bool:>
+ = Cons<:Bool:> True<::>
+     Nil<:Bool:>
+
+CPU time elapsed: 0.000 s
+> :e let x :: List Bool free in x
+ :: List Bool
+ ~> [_1_x -> Nil<:Bool:>]
+      |- Nil<:Bool:>
+ ~> [_1_x -> Cons<:Bool:>
+    _2_conArg _3_conArg
+    ,_2_conArg -> free :: Bool
+    ,_3_conArg -> free :: List Bool]
+      |- Cons<:Bool:> _2_conArg
+      _3_conArg
+
+CPU time elapsed: 0.000 s
+> :q
+Bye.
+\end{verbatim}
+}
+
+The REPL is implemented using the \emph{Haskeline} library\footnote{
+\url{https://hackage.haskell.org/package/haskeline}},
+which is also used by GHCi,
+the REPL of the Glasgow Haskell compiler.
+It provides a history of the previous inputs
+that can be selected using the up and down keys.
+
+The REPL can evaluate expressions functionally,
+printing the results together with the corresponding heap.
+By default, it evaluates expressions to reduced normal form.
+In this case, the heap is unnecessary,
+since there are no variables in reduced normal form.
+As can be seen, the expressions are type checked before evaluation
+and the computation time is displayed afterwards.
+Evaluation can also be interrupted with the key combination \verb!Ctrl + C!,
+which is useful for non-terminating expressions.
+
+There are two of parameters that the user can change,
+namely the search depth limit, which is infinity by default,
+and the search strategy, which is BFS by default.
+The values of the parameters can be viewed with \verb!:get!
+and they can be changed using \verb!:set!.
+
+\section{Assessment}
