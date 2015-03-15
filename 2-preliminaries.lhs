@@ -526,8 +526,8 @@ Let |Gamma := a, x :: a, y :: a| and |Gamma' := Gamma, c :: Bool|.
     \TrinaryInfC{|Gamma' ||- case c of { True -> set x; False -> set y } :: Set a|}
   \UnaryInfC{|Gamma ||- \c :: Bool -> case c of { .. } :: Bool -> Set a|}
 \BinaryInfC{|Gamma ||- unknown<:Bool:> >>= \c :: Bool -> case c of { .. } :: Set a|}
-\UnaryInfC{|a, x :: a ||- \y :: a -> unknown<:Bool:> >>= \c :: Bool -> case c of { .. } :: a -> -> Set a|}
-\UnaryInfC{|a ||- \x :: a -> \y :: a -> unknown<:Bool:> >>= \c :: Bool -> case c of { .. } :: a -> a -> -> Set a|}
+\UnaryInfC{|a, x :: a ||- \y :: a -> unknown<:Bool:> >>= \c :: Bool -> case c of { .. } :: a -> Set a|}
+\UnaryInfC{|a ||- \x :: a -> \y :: a -> unknown<:Bool:> >>= \c :: Bool -> case c of { .. } :: a -> a -> Set a|}
 \end{prooftree}
 
 The proof of well-typedness of |map| is so similar to the one in \cumin{}
