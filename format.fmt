@@ -18,6 +18,8 @@
 %format ~>* = "\Downarrow ^*"
 %format ~>! = "\Downarrow^!"
 %format / = "/"
+%format ~= = "\; \cong \;"
+
 
 %format eps = " "
 %format .. = "\dots"

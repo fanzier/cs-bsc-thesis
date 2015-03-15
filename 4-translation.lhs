@@ -128,7 +128,7 @@ because each (sub-)function needs to be wrapped in |set|-braces.
 
 \subsection{Examples}
 
-Let us look at some \cumin{} functions and their translations.\\
+Some example translations can be seen below.\\[.5cm]
 \begin{minipage}{.4\textwidth}%
 \texths\small%
 \begin{code}
@@ -188,12 +188,138 @@ length = { \xs :: List a -> case xs of
 \section{Improving the generated \salt{} code}
 
 As we have seen above,
-the translation rules are relatively naïve
-because they assume every expression
-to be non-deterministic
-so one does not have to worry about special cases
-and can use very straightforward rules.
+the translation rules are relatively naïve.
+Translated expressions are often unnecessarily set-typed,
+so there is a lot of \enquote{plumbing} with |set| and |>>=| required.
 However, there are some simple transformations
 that can be used to make the \salt{} code much more efficient.
 
-\todo[inline]{Expand on \salt{} optimizations.}
+One transformation that is not directly useful
+but helps a lot with other simplifications is $\beta$-reduction:
+Given an expression of the form |(\x -> e_1) e_2|,
+one can turn it into |e_1[e_2/x]|.
+However, $\beta$-reducing is not always beneficial:
+Substituting the expression |e_2| into |e_1|
+can lead to wasteful recomputation
+if |x| occurs in |e_1| more than once.
+Hence, this simplification should only be used
+when the bound variable occurs at most once.\footnote{
+There are actually more cases where this is safe,
+for example, if the variable occurs only once
+in each branch of a case expression.
+However, there is still some code being duplicated,
+which may increase program size considerably.
+To keep things simple, I did not explore that further.}
+
+It was mentioned before
+that the set type constructor |Set| forms a monad,
+in particular, it obeys the \emph{monad laws} listed below.
+The symbol |~=| denotes semantical equivalence.
+\begin{enumerate}
+\item |({ e } >>= f) ~= (f e)|
+\item |(e >>= \x -> { x }) ~= e|
+\item |(e >>= f >>= g) ~= (e >>= \x -> f x >>= g)|
+\end{enumerate}
+
+The first monad law, viewed as a transformation from left to right,
+is extremely useful
+for simplifying the translated \salt{} programs.
+\cumin{} literals and variables are translated to singleton sets,
+which makes this law applicable in many cases.
+Afterwards, $\beta$-reduction can be applied as a next step.
+As an example, consider the term |1 + 1|.
+Its translated version can be simplified using the first monad law twice
+and then $\beta$-reducing twice:
+\begin{code}
+set 1 >>= \x :: Nat -> set 1 >>= \y :: Nat -> set (x + y)
+~= (\x :: Nat -> set 1 >>= \y :: Nat -> set (x + y)) 1
+~= (\x :: Nat -> (\y :: Nat -> set (x + y)) 1) 1
+~= (\y :: Nat -> set (1 + y)) 1
+~= set (1 + 1)
+\end{code}
+
+The second monad law is not very useful,
+it can only be applied
+in case of unnecessary let-bindings like
+|let x = e in x|.
+
+The utility of the third monad law is not immediately obvious.
+However, it can be used to \enquote{re-associate} |>>=|-bindings,
+thus enabling the application of the first rule in some cases.
+For instance, consider the expression |x >>= \y -> { f } >>= \g -> g y|.
+At first, neither the first nor the second law can be applied
+since |>>=| associates to the left.
+(It is implicitly parenthesized like this:
+|(x >>= \y -> { f }) >>= \g -> g y|.)
+The third monad law allows as to transform this into
+|x >>= \y -> ({ f } >>= \g -> g y)|.
+Now, the first monad law is applicable and yields
+|x >>= \y -> f y| after $\beta$-reduction, as desired.
+
+This is not a hypothetical scenario but happens
+in real translated \salt{} programs.
+For instance, consider the \cumin{} expression
+|Cons<:Nat:> coin Nil<:Nat:>|.
+Translating this to \salt{} and applying the first monad law yields:
+\begin{code}
+trans (Cons<:Nat:> coin Nil<:Nat:>!)
+~= coin >>= \c :: Nat -> { \xs :: List Nat -> { Cons<:Nat:> c xs } }
+  >>= \f :: (List Nat -> Set (List Nat)) -> f Nil<:Nat:>
+\end{code}
+Applying the third monad enables the first monad law and $\beta$-reduction:
+\begin{code}
+coin >>= \c :: Nat ->
+  ({ \xs :: List Nat -> { Cons<:Nat:> c xs } }
+  >>= \f :: (List Nat -> Set (List Nat)) -> f Nil<:Nat:>!)
+~= coin >>= \c :: Nat ->
+  (\xs :: List Nat -> { Cons<:Nat:> c xs }) Nil<:Nat:>
+~= coin >>= \c :: Nat -> { Cons<:Nat:> c Nil<:Nat:> }
+\end{code}
+
+As a larger example,
+let us see at how the simplifications transforms the prelude function |length|.
+The original version is on the left,
+the simplified one on the right.\\[0.5em]
+\begin{minipage}{.5\textwidth}%
+\texths\small%
+\begin{code}
+length :: forall a. Set (List a -> Set Nat)
+length = { \xs :: List a -> case xs of
+  Nil -> 0
+  Cons y ys -> { 1 } >>= \i :: Nat ->
+    length<:a:> >>= \length' :: (List a -> Set Nat) ->
+    { ys } >>= \ys'->
+    length' ys' >>= \l :: Nat -> { i + l } }
+\end{code}
+\end{minipage}
+\begin{minipage}{.5\textwidth}%
+\texths\small%
+\begin{code}
+length :: forall a. Set (List a -> Set Nat)
+length = { \xs :: List a -> case xs of
+  Nil -> 0
+  Cons y ys -> length<:a:> >>=
+    \length' :: (List a -> Set Nat) ->
+    length' ys >>= \l :: Nat -> {1 + l} }
+\end{code}
+\end{minipage}
+\\[.5cm]
+This is a considerable improvement.
+There is only one thing that could be done better.
+A smart compiler could recognize
+that the |length| function is in fact deterministic.
+It could thus generate the following code:
+\begin{code}
+length' :: forall a. List a -> Nat
+length' = \xs :: List a -> case xs of
+  Nil -> 0
+  Cons y ys -> 1 + length'<:a:> ys
+
+length :: forall a. Set (List a -> Set Nat)
+length = { \xs :: List a -> { length'<:a:> xs } }
+\end{code}
+However, it is not entirely clear
+how a compiler might arrive at this solution
+and the complexity would be beyond the scope of a bachelor thesis.
+The current simplifications produce good results,
+and the chance for small improvements does not justify the large additional effort.
