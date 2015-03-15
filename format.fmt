@@ -68,8 +68,12 @@
 
 %format tau'
 %format tau_1
+%format tau'_1
 %format tau_2
 %format tau_n
+%format tau'_n
+%format tau_i
+%format tau'_i
 %format tau_l
 %format tau_11
 %format tau_12
