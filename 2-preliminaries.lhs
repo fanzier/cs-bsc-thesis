@@ -345,13 +345,13 @@ The typing rules are given below.
 \AxiomC{|vec (Gamma, vec (x_i_j :: tau_i_j[vec (rho_m/alpha_m)]) ||- e_i :: tau|}
 \BinaryInfC{|Gamma ||- case e of { vec(C_i (vec x_i_j) -> e_i;) } :: tau|}
 \DisplayProof
-\quad\text{for every |data A (vec rho_m) = vec (C_i (vec tau_i_j))|}
+\quad\text{for every |data A (vec alpha_m) = vec (C_i (vec tau_i_j))|}
 \\[1em]
 \AxiomC{\text{\dots (as above)}}
 \AxiomC{|Gamma, x :: A (vec rho_m) ||- e' :: tau|}
 \BinaryInfC{|Gamma ||- case e of { vec(C_i (vec x_i_j) -> e_i;) x -> e'; } :: tau|}
 \DisplayProof
-\quad\text{for every |data A (vec rho_m) = vec (C_i (vec tau_i_j))|}
+\quad\text{for every |data A (vec alpha_m) = vec (C_i (vec tau_i_j))|}
 \end{gather*}
 
 In order to type check functions, recall the shape of their definitions.
