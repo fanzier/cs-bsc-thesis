@@ -211,6 +211,18 @@ However, there is still some code being duplicated,
 which may increase program size considerably.
 To keep things simple, I did not explore that further.}
 
+Similarly to $\beta$-reduction,
+there is $\eta$-reduction:
+An expression of the form |\x -> f x| is equivalent to |f|
+if |x| does not occur freely in |f|.
+In contrast to $\beta$-reduction,
+this transformation is always safe and beneficial.\footnote{
+Note that this is not valid in the presence of |seq|.
+It can distinguish between |undefined| and |\x -> undefined x|.
+Such a primitive does not exist in \salt{}, however.
+So everything is fine.
+}
+
 It was mentioned before
 that the set type constructor |Set| forms a monad,
 in particular, it obeys the \emph{monad laws} listed below.
@@ -254,7 +266,8 @@ since |>>=| associates to the left.
 The third monad law allows as to transform this into
 |x >>= \y -> ({ f } >>= \g -> g y)|.
 Now, the first monad law is applicable and yields
-|x >>= \y -> f y| after $\beta$-reduction, as desired.
+|x >>= \y -> f y| after $\beta$-reduction.
+Using $\eta$-equivalence, we arrive at |x >>= f|, as desired.
 
 This is not a hypothetical scenario but happens
 in real translated \salt{} programs.
@@ -275,6 +288,12 @@ coin >>= \c :: Nat ->
   (\xs :: List Nat -> { Cons<:Nat:> c xs }) Nil<:Nat:>
 ~= coin >>= \c :: Nat -> { Cons<:Nat:> c Nil<:Nat:> }
 \end{code}
+As a simplification, one can limit oneself
+to only ever applying the third monad law from left to right.
+This is because the first monad law can be used much more often
+than the second one, and it benefits only from this direction.
+In the example programs I looked at,
+the other direction was never beneficial.
 
 As a larger example,
 let us see at how the simplifications transforms the prelude function |length|.
