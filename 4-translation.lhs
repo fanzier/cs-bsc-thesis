@@ -342,3 +342,149 @@ how a compiler might arrive at this solution
 and the complexity would be beyond the scope of a bachelor thesis.
 The current simplifications produce good results,
 and the chance for small improvements does not justify the large additional effort.
+
+\section{Implementation}
+
+While the translation given in \cite{orig} is purely syntactical,
+the adapted version presented here requires type information.
+As a consequence, one has to keep track of the types of bound variables
+while traversing the syntax tree.
+Another problem is fresh variables and capture avoidance
+which was briefly discussed in Section 2.5.1.
+Fresh variables could be generated as before, by appending a unique number.
+Variable capture is a real problem, however:
+$\beta$-reducing |(\z -> (\y -> z)) (\x -> y)|
+by blind substitution
+yields |\y -> (\x -> y)| which is incorrect,
+since the variable |y| is not free anymore.
+This could be solved
+by examining the variables of the substituted expression
+and renaming them, if necessary.
+This is rather complicated and relatively hard to get right.
+
+I chose the following different solution:
+I used a nameless representation of terms,
+where variables are not identified by names
+but by \enquote{how many levels up the syntax tree they were bound}.
+This is made precise below.
+
+\subsection{Nameless representation}
+
+To handle bound variables, I used the \verb!bound! library\footnote{
+\url{http://hackage.haskell.org/package/bound}
+} by Edward Kmett.
+It has the following variable type:
+> data Var b a = B b | F a
+|B b| represents a variable bound directly
+by the next binding up the syntax tree.
+|F a| represents a free variable,
+it is not directly bound by the next parent binding.
+But it may be bound at higher levels in the syntax tree.
+
+For illustration purposes, consider the following expression type:
+> data Exp v = Var v | Lam (Scope () Exp v)
+|v| is the variable type of the expression.
+|Scope| is provided by the \verb!bound! library and represents a binder.
+The general form is
+> data Scope b f a = Scope (f (Var b (f a)))
+where |b| represents additional information for bound variables,
+in this case none, \ie |()|;
+|f| represents the expression type
+and |a| the type of free variables,
+not bound in this scope;
+and |a| represents the type of free variables in the binder.
+For example, the expression |\x -> \y -> x| would be represented as
+> Lam (Scope (Lam (Scope (Var (F (Var (B ())))))))
+|F| \enquote{lifts} the bound variable |B ()| one level up,
+so it is bound by the outer lambda instead of the inner one.
+For lack of space, I cannot give a longer introduction to the library.
+But I want to highlight some of its advantages.
+
+First of all, variable capture is not a problem anymore,
+and substitution is for the most part handled in the library.
+Additionally, there is a lot more type safety
+than in a representation with names:
+For example, a term without free variables can be given the type
+|Exp Void| where |Void| is an empty type.
+In fact, this is what I do for \salt{} functions in the program,
+since they have to be closed terms.
+(Calling top-level functions is not represented as a free variable.)
+Furthermore, lots of mistakes when handling variables
+can be caught at compile time.
+The reason is that
+blunders like forgetting a binder lead to type errors in the Haskell code
+because the variable types do not match up.
+
+\subsection{Overview}
+
+The program \verb!cumin2salt! for the translation works as follows:
+The given \cumin{} program is parsed and
+type checked.
+If there were no errors, it is translated to the nameless representation.
+This one, in turn, is transformed to a nameless \salt{} representation,
+following the translation rules.
+If desired by the user,
+the simplifications $\beta$-reduction, $\eta$-reduction and the monad laws
+are used to improve the generated \salt{} code.
+This nameless \salt{} AST is then translated to a regular \salt{} AST.
+This is done by giving names to the bound variables.
+To guarantee these are unique, each one gets a unique number.
+Note that only one renaming pass over the AST is necessary,
+everything before is handled by the nameless representation.
+Also, the original variable names are still retained if possible
+to make the output more readable.
+Finally, this \salt{} AST is pretty-printed and written to a file.
+
+\subsection{Command Line Interface}
+
+The command line arguments to the program look like this:
+\begin{verbatim}
+cumin2salt INPUT [-o OUTPUT] [-s|--simplify] [--with-prelude]
+\end{verbatim}
+The program is given a \cumin{} input file name and, possibly,
+a \salt{} output file name (default: \verb!Out.salt!).
+There is a flag to turn on the simplification rules
+and one to control
+whether or not the prelude functions should be included in the output.
+Normally, the translated prelude functions need not be included,
+as they are provided by the alternative \salt{} prelude. (cf. Chapter 2.4)
+Of course, \verb!--help! can be used to show a help text.
+
+\subsection{Example}
+
+As an example,
+consider the following automatic translation of the |length| function.
+\begin{code}
+length :: forall a. Set (List a -> Set Nat)
+length = {\xxs81 :: List a -> case xxs81 of
+    Nil -> {0}
+    Cons x82 xs83 -> length<:a:> >>= \arg84 :: (List a
+                                        -> Set Nat) -> arg84 xs83 >>=
+      \primOpArg85 :: Nat -> {1 + primOpArg85}}
+\end{code}
+As can be seen, numbers are appended to variable names
+to make them unique.
+Apart from that, this output matches the manual translation seen above.
+
+\subsection{Correctness}
+
+To ensure correctness of the translation program,
+I took the following measures:
+First, type checking \cumin{} and \salt{} programs
+is a very useful consistency check.
+After every simplification, it is checked that the type did not change.
+Additionally, after the whole translation,
+it is checked that the \salt{} functions have the right types.
+This catches a large class of bugs.
+
+Testing is still necessary, of course.
+The implementation of denotational semantics for \cumin{} and \salt{}
+by Fabian Thorand is his bachelor thesis provides a good way to do this.
+A \cumin{} expression in the context of some program
+must have the same semantics
+as the translated expression in context of the translated program.
+This procedure is executed for several test programs and expressions.
+
+Together, type checking and testing using the denotational semantics
+strengthen the claim that the translation preserves the semantics
+and thus works as intended.
