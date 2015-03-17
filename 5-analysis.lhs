@@ -205,5 +205,118 @@ This shows that |maybeDouble1| is multideterministic.
 On the other hand, such a proof fails for |maybeDouble2|,
 which is another illustration of their discrepancy.
 
-\todo[inline]{Discuss recursive functions?}
+\section{Recursive Definitions}
+
+From what we discussed before,
+it is not clear how to handle recursion.
+For illustration, consider the infinite list:
+> ones :: List Nat
+> ones = Cons<:Nat:> 1 ones
+Intuitively, it is clear that this is deterministic
+but our method from before (especially inlining) will not work.
+Let us look at the \salt{} code.
+> ones :: Set (List Nat)
+> ones = ones >>= \x -> { Cons<:Nat:> 1 x }
+At first sight,
+it seems that there is no way to \enquote{extract} any sets from this.
+
+However, I claim that it is equivalent to the following.
+> ones' :: List Nat
+> ones' = Cons<:Nat:> 1 ones'
+>
+> ones :: Set (List Nat)
+> ones = { ones' }
+
+To justify that, we need to look at
+how \salt{} defines the semantics of recursion.
+A recursive set-typed definition |f = e| can be written as |f = g f|
+(the least fixpoint of |g|)
+for some non-recursive function |g|, namely |g = \x -> e[x/f]|.
+By the denotational semantics for \salt{},
+|f| is equivalent to the union of
+|g failed|, |g (g failed)|, |g (g (g failed))| etc.
+If one knows that |g . set ~= set . g'|,
+one can write
+> g (g failed)) ~= g (g {failed}) ~= g {g' failed} ~= {g' (g' failed)}
+since |failed<:Set tau:>! = { failed<:tau:>! }| for all |tau|.
+So |f| is equivalent to the union of
+|set (g' failed)|, |set (g' (g' failed))| etc.,
+which means it is equivalent to |f| defined as |f = set (g' f)|.
+
+In the concrete example above, we can choose
+|g = \y -> y >>= \x -> { Cons<:Nat:> 1 x }|
+to satisfy |ones = g (ones)|.
+Furthermore one can show that
+> g . set
+> ~= \y -> { y } >>= \x -> { Cons<:Nat:> 1 x }
+> ~= \y -> { Cons<:Nat:> 1 y }
+> ~= set . Cons<:Nat:> 1
+So choosing |g' = Cons<:Nat:> 1| allows exactly the transformation
+we did above.
+
+Let us consider another example: the |length| function.
+> length :: forall a. List a -> Nat
+> length list = case list of
+>   Nil -> 0
+>   Cons x xs -> 1 + length<:a:> xs
+Translated to \salt{}:
+> length :: forall a. Set (List a -> Set Nat)
+> length = {\list :: List a -> case list of
+>   Nil -> { 0 }
+>   Cons x xs -> length<:a:> >>= \f ->
+>     f xs >>= \l -> { 1 + l xs}}
+or equivalently:
+> length :: forall a. Set (List a -> Set Nat)
+> length = g length
+>
+> g :: forall a. Set (List a -> Set Nat) -> Set (List a -> Set Nat)
+> g = \length' -> {\list :: List a -> case list of
+>   Nil -> { 0 }
+>   Cons x xs -> length' >>= \f ->
+>     f xs >>= \l -> { 1 + l xs}}
+
+Again, one can show an \enquote{extraction property} of |g|:
+> g . (set . (set .))
+> ~= -- definition of |(.)|, $\beta$-reduction
+> \length' :: (List a -> Nat) ->
+> {\list :: List a -> case list of
+>   Nil -> { 0 }
+>   Cons x xs -> {set . length'} >>= \f ->
+>     f xs >>= \l -> { 1 + l xs}}
+> ~= -- first monad law
+> \length' :: (List a -> Nat) ->
+> {\list :: List a -> case list of
+>   Nil -> { 0 }
+>   Cons x xs -> {length' xs} >>= \l -> { 1 + l xs}}
+> ~= -- first monad law
+> \length' :: (List a -> Nat) ->
+> {\list :: List a -> case list of
+>   Nil -> { 0 }
+>   Cons x xs -> { 1 + length' xs}}
+> ~= -- case
+> \length' :: (List a -> Nat) ->
+> {\list :: List a -> {case list of
+>   Nil -> 0
+>   Cons x xs -> 1 + length' xs } }
+> ~= -- rewrite with combinators
+> (set . (set .)) . (\length' :: (List a -> Nat) ->
+> \list :: List a -> case list of
+>   Nil -> 0
+>   Cons x xs -> 1 + length' xs)
+> ~= -- choosing |g'| suitably
+> (set . (set .)) . g'
+So, we can equivalently define |length = { set . length'}|
+with |length' = g' length'|.
+Inlining |g'| yields:
+> length' :: List a -> Nat
+> length' = \list :: List a -> case list of
+>   Nil -> 0
+>   Cons x xs -> 1 + length' xs
+>
+> length :: Set (List a -> Set Nat)
+> length = { \list :: List a -> { length' list } }
+This is the optimal way of writing this function
+and it was derived from the original translation
+using only well-specified program transformations.
+
 \todo[inline]{Discuss problems with higher-order functions}
