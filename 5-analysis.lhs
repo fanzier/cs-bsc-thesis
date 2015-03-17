@@ -319,4 +319,35 @@ This is the optimal way of writing this function
 and it was derived from the original translation
 using only well-specified program transformations.
 
-\todo[inline]{Discuss problems with higher-order functions}
+\section{Limitations and Further Work}
+
+While I have presented methods to analyze for many functions,
+including recursive ones,
+I have not talked about functions with higher order arguments,
+like |map|.
+Whether such a function is deterministic depends on
+whether its higher order argument is deterministic or not.
+Inlining can solve that problem
+but in case of recursive functions
+it does not help.
+One could instead creating a special function |map_f|
+for every call of |map f| occuring in the program,
+and replace the recursive calls to |map f| by |map_f|.
+However, if the recursive call uses a modified function,
+this cannot be easily repaired.
+
+To avoid this complexity, it is probably better
+to use a type and effect system to track the nondeterminism in the program.
+Such an approach is described in \cite{nondetana}.
+
+However, the goal of this thesis was to analyze
+the nondeterminism behavior of programs by translating them to \salt{}
+and applying program transformations.
+The methods I described here can be formalized
+and implemented.
+My implementation is able to analyze the nondeterminism of all the functions
+we discussed in this chapter.
+However, the details were quite technical and the proofs relatively long,
+so I did not include it here.
+The transformations I described could also be used
+to generate better \salt{} code from \cumin{} programs.
