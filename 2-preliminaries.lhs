@@ -65,37 +65,55 @@ To formalize the type formation rules,
 one first needs to describe
 what type contexts look like.
 
+\begin{gather*}
 \AxiomC{|isContext emptycontext|}
 \DisplayProof
+\quad
 \AxiomC{|isContext Gamma|}
 \UnaryInfC{|isContext (Gamma, alpha)|}
 \DisplayProof
+\quad
+\AxiomC{|isContext Gamma|}
+\AxiomC{|Gamma ||- isType tau|}
+\BinaryInfC{|isContext (Gamma, x :: tau)|}
+\DisplayProof
+\\[1em]
 \AxiomC{|isContext (Gamma, alpha)|}
 \UnaryInfC{|isContext (Gamma, alpha, isData alpha)|}
 \DisplayProof
-\AxiomC{|isContext Gamma, Gamma ||- isType tau|}
-\UnaryInfC{|isContext (Gamma, x :: tau)|}
+\quad
+\AxiomC{|isContext Gamma|}
+\AxiomC{$I \subset \mathbb{N}$}
+\BinaryInfC{|isContext (Gamma, dataIdx A I)|}
 \DisplayProof
+\quad\text{for an ADT |A|}
+\end{gather*}
 
 These are the allowed contexts in what follows.
 Let us now look at well-formed types.
 
+\begin{gather*}
 \AxiomC{|Gamma,alpha ||- isType alpha|}
 \DisplayProof
-\AxiomC{|vec (Gamma ||- isType tau_l)|}
-\UnaryInfC{|Gamma ||- isType (A (vec tau_l))|}
+\quad
+\AxiomC{|Gamma ||- isType Nat|}
 \DisplayProof
-for an ADT |A| with |l| parameters
+\quad
 \AxiomC{|Gamma ||- isType tau|}
 \AxiomC{|Gamma ||- isType tau'|}
 \BinaryInfC{|Gamma ||- isType (tau -> tau')|}
 \DisplayProof
-\AxiomC{|Gamma ||- isType Nat|}
+\\[1em]
+\AxiomC{|vec (Gamma ||- isType tau_l)|}
+\UnaryInfC{|Gamma ||- isType (A (vec tau_l))|}
 \DisplayProof
+\quad\text{for an ADT |A| with |l| parameters}
+\qquad
 \AxiomC{|Gamma ||- isType tau|}
 \UnaryInfC{|Gamma ||- isType (Set tau)|}
 \DisplayProof
-in \salt{}.
+\quad\text{in \salt{}}
+\end{gather*}
 
 An algebraic data type is defined like it is in Haskell.
 It has a name |A|,
@@ -132,20 +150,26 @@ Essentially, an ADT is a |Data| type
 if the types of all constructors are |Data| types.
 The following rules capture this notion.
 
+\begin{gather*}
 \AxiomC{|Gamma, alpha, isData alpha ||- isData alpha|}
 \DisplayProof
+\quad
 \AxiomC{|Gamma, alpha, dataIdx A I ||- dataIdx A I|}
 \DisplayProof
+\\[1em]
 \AxiomC{|Gamma ||- isData Nat|}
-\DisplayProof \\
+\DisplayProof
+\quad
 \AxiomC{|Gamma ||- dataIdx A I|}
 \AxiomC{$(|vec (Gamma ||- isData tau_i)|)_{i \in I}$}
 \BinaryInfC{|Gamma ||- isData (A (vec tau_l))|}
-\DisplayProof \\
+\DisplayProof
+\\[1em]
 \AxiomC{$\left(|(vec (Gamma, dataIdx A I, ((vec alpha_l))<:l `elem` I:>, ((vec (isData alpha_l)))<:l `elem` I:> ||- isData tau_mn)|\right)_{mn_m}$}
 \UnaryInfC{|Gamma ||- dataIdx A I|}
 \DisplayProof
-where |data A (vec alpha_l) = vec (C_m (vec tau_mn))|
+\quad\text{where |data A (vec alpha_l) = vec (C_m (vec tau_mn))|}
+\end{gather*}
 
 Let us take a look at some examples.
 The deduction of |isData Bool| is quite simple.
