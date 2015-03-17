@@ -971,4 +971,43 @@ and the search strategy, which is BFS by default.
 The values of the parameters can be viewed with \verb!:get!
 and they can be changed using \verb!:set!.
 
-\section{Assessment}
+\section{Assessment of Search Strategies}
+
+To examine the effect of different search strategies,
+I created some test programs and measured the time
+to compute all values of certain nondeterministic expressions
+using breadth-first search or depth-first search, respectively.
+The example programs were the following:
+Subtracting two numbers in Peano representation
+using a free variable and addition;
+Dividing two Peano numbers using a free variable and multiplication;
+Multiplying two primitive |Nat| numbers;
+finding the last element of a list, as shown in the introduction;
+sorting a list by trying all permutations.
+
+\begin{tabular}{l l l}
+Program & BFS & DFS \\
+\hline
+Peano subtraction & 1.2 s & 1.3 s \\
+Peano division & 11.1 s & 11.2 s \\
+Last & 0.9 s & 1.0 s \\
+Permutation sort & 0.50 s & 0.55 s \\
+\end{tabular}
+
+As one can see, in all the test cases,
+BFS is a little faster than DFS.
+However, when only the first solution is required,
+and the branching factor is high,
+DFS can be faster.
+An example would be multiplying primitive natural numbers.
+Since there is no primitive multiplication,
+it has to be implemented in terms of subtraction ($mn = n + (m-1)n$),
+and subtraction requires search.
+The result of $6 \times 6$ was computed instantly by DFS
+and took seconds to compute using BFS.
+
+BFS has the disadvantage of worse space complexity than DFS.
+But in the examples I tested, this did not seem to be a problem.
+On the other hand, it has the advantage of
+finding all solutions even in infinitely deep trees,
+so it is preferable as a default search strategy.
