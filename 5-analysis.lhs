@@ -6,8 +6,9 @@ to derive free theorems for \cumin{}.
 In order to do this, one has to restrict the nondeterministic behavior
 of the functions involved.
 \salt{} serves the purpose of making nondeterminism explicit
-and being able to analyze it properly.
-This topic, namely nondeterminism analysis, is what this chapter is about.
+so that one can analyze it properly.
+This chapter is about
+how exactly this is done.
 
 \section{Introduction}
 
@@ -27,22 +28,34 @@ so it is completely deterministic.
 
 What is also quite obvious is
 that deciding whether a function is deterministic is undecidable.
-This can be proved by reduction from the halting problem:
-> test :: Set Bool
-> test = case condition of { True -> set True; False -> unknown<:Bool:> }
-This is deterministic if and only if |condition| is true.
-However, in general it is undecidable which branch is evaluated.
-After all, we cannot even decide whether |condition| terminates.
+This can be proved by reduction from the halting problem.\footnote{
+As \salt{} includes a simply-typed lambda calculus
+and allows unrestricted recursion, it is Turing complete.}
+Consider the following \salt{} expression:
+> case condition of { True -> set True; False -> unknown<:Bool:>! }
+This is deterministic if and only if the first branch is always evaluated.
+However, we cannot decide whether |condition| is always |True|
+since it is even undecidable whether its evaluation terminates at all.
 So any method of detecting determinism must be conservative
 and will not be complete.
 However, one can go quite far with purely syntactic transformations.
 
+In the following, I will not strictly adhere to the \salt{} syntax
+to keep it readable.
+For example, I will omit type instantiations if they are obvious
+and I will allow additional infix operators.
+Also, I will sometimes write
+\salt{} function definitions in an equational style
+instead of explicit lambda abstractions.
+
 \section{Determinism}
 
 First of all, we have to define what deterministic means.
-A \cumin{} expression |e| is called deterministic
-if there is a \salt{} expression |e'|
+A \cumin{} expression |e :: tau| is called \emph{deterministic}
+if there is a \salt{} expression |e' :: tytrans tau|
 such that |trans e ~= {e'}|.
+As before, |~=| denotes semantical equivalence.
+So this means that |e| is equivalent to a singleton set in \salt{}.
 
 How can one derive that an expression is deterministic?
 It can often be done by inlining top-level functions
@@ -54,7 +67,6 @@ To show that it is deterministic,
 one translates the expression to \salt{},
 simplifies the result
 and inlines functions to apply more monad laws.
-(Types in lambda abstractions are omitted for clarity.)
 > trans (double (double 1))
 > ~= -- translation and simplification:
 > double >>= \f -> (double >>= \g -> g 1) >>= f
@@ -80,15 +92,18 @@ As another example, consider the expression |guard<:Nat:> cond 1| where
 returns |x| only if |cond| is |True|.
 Here, another rule is useful:
 In a case expression where each branch is a singleton set,
-this singleton set can be extracted and moved out of the case expression.
-These two transformations work because |set| has strict semantics in \salt{}.
-A formal prove needs the denotational semantics for \salt{}
-and there is no space to develop it here.
-Using these rules, one can show it is equivalent to a singleton set.
+this singleton set can be extracted and moved out of the case expression:
+> case e of { p_1 -> { e_1 }; ..; p_n -> { e_n } }
+> ~= { case e of { p_1 -> e_1; ..; p_n -> e_n } }
+This transformation works because |set| has strict semantics in \salt{}.
+(A formal proof would need the denotational semantics for \salt{}
+and there is no space to develop it here.)
+Using these rules, one can show
+that |guard<:Nat:> cond 1| is equivalent to a singleton set.
 > trans (guard<:Nat:> cond 1)
 > ~= -- translation and simplification
 > guard<:Nat:> >>= \g -> trans cond >>= \c -> g >>= \g' -> g' c 1
-> ~= -- |cond| is deterministic
+> ~= -- assuption: |cond| is deterministic
 > guard<:Nat:> >>= \g -> { cond' } >>= \c -> g >>= \g' -> g' c 1
 > ~= -- first monad law, $\beta$-reduction
 > guard<:Nat:> >>= \g -> g >>= \g' -> g' cond' 1
@@ -102,12 +117,15 @@ Using these rules, one can show it is equivalent to a singleton set.
 > {\x -> {case cond' of { True -> x; False -> failed<:Nat:> } } } >>= \f -> f 1
 > ~= -- first monad law, $\beta$-reduction
 > { case cond' of { True -> 1; False -> failed<:Nat:> } }
+This is again a singleton set,
+\ie under the assumption that |cond| is deterministic,
+so is |guard<:Nat:> cond 1|.
 
 \section{Multideterminism}
 
 In the following, I will study a weaker notion of determinism,
 namely \emph{multideterminism}.
-For that, the following comibinatiors are needed.\footnote{
+For that, the following comibinators are needed.\footnote{
 I take the liberty to write functions in an equational style for readability
 although this is technically not allowed by the \salt{} syntax.}
 > (.) :: (b -> c) -> (a -> b) -> (a -> c)
@@ -121,12 +139,14 @@ although this is technically not allowed by the \salt{} syntax.}
 |(.)| is just function composition,
 |sMap| applies a function to each element of a set
 and |set| places an expression in a singleton set.
+I will often use the section notation for |(.)| as in Haskell:
+|(f .)| stands for |\g -> f . g| and |(. f)| stands for |\g -> g . f|.
 
 Using these combinators,
 a \cumin{} function |f :: tau_1 -> tau_2| is called \emph{multideterministic}
 if there is a \salt{} function |f' :: Set (tytrans tau_1 -> tytrans tau_2)|
 such that |trans f ~= sMap (\g -> set . g) f'|.
-Such an |f'| is called a \emph{witness}. \cite{orig}
+Such an |f'| is called a \emph{witness}, as in \cite{orig}.
 
 Intuitively, this means that the set braces on the inner level of
 |trans f :: Set (tytrans tau_1 -> Set (tytrans tau_2))|
@@ -134,17 +154,28 @@ are unnecessary,
 \ie |f| represents a set of functions returning singleton sets.
 The motivation for this definition in \cite{orig}
 is the derivation of free theorems,
-which require the inner level of nondeterminism to be restricted.
+which requires the inner level of nondeterminism to be restricted.
 
 Besides the definition of |sMap|,
-the following equivalence is useful.
-\begin{itemize}
+the following equivalences are useful.
+\begin{enumerate}
+\item |sMap f { e } ~= { f e }|
 \item |sMap f s >>= g ~= s >>= (g . f)|
 \item |s >>= (sMap f . g) ~= sMap f (s >>= g)|
-\end{itemize}
+\end{enumerate}
 The proofs employ the monad laws.
+\begin{enumerate}
+\item
+> sMap f { e }
+> ~= -- definition of |sMap|
+> { e } >>= set . f
+> ~= -- first monad law
+> (set . f) e
+> ~= -- definition of |(.)|
+> { f e }
+\item
 > sMap f s >>= g
-> ~= -- definition of sMap
+> ~= -- definition of |sMap|
 > (s >>= set . f) >>= g
 > ~= -- third monad law
 > s >>= (\x -> { f x } >>= g)
@@ -152,7 +183,7 @@ The proofs employ the monad laws.
 > s >>= \x -> g (f x)
 > ~= -- definition of |(.)|
 > s >>= (g . f)
->
+\item
 > s >>= (sMap f . g)
 > ~= -- definition of |(.)|
 > s >>= \x -> sMap f (g x)
@@ -162,9 +193,10 @@ The proofs employ the monad laws.
 > s >>= g >>= (set . f)
 > ~= -- definition of |sMap|
 > sMap f (s >>= g)
+\end{enumerate}
 
 To give a concrete example,
-let us show that |maybeDouble1|from the beginning of Chapter 3
+let us show that |maybeDouble1| from the beginning of Chapter 3
 is multideterministic.
 Recall the definitions:
 > maybeDouble1 :: Nat -> Nat
@@ -213,13 +245,13 @@ For illustration, consider the infinite list:
 > ones :: List Nat
 > ones = Cons<:Nat:> 1 ones
 Intuitively, it is clear that this is deterministic
-but our method from before (especially inlining) will not work.
+but our methods from before (especially inlining) will not work.
 Let us look at the \salt{} code.
 > ones :: Set (List Nat)
 > ones = ones >>= \x -> { Cons<:Nat:> 1 x }
 At first sight,
-it seems that there is no way to \enquote{extract} any sets from this.
-
+it seems that there is no way
+to \enquote{extract} any singleton sets from this.
 However, I claim that it is equivalent to the following.
 > ones' :: List Nat
 > ones' = Cons<:Nat:> 1 ones'
@@ -229,23 +261,28 @@ However, I claim that it is equivalent to the following.
 
 To justify that, we need to look at
 how \salt{} defines the semantics of recursion.
-A recursive set-typed definition |f = e| can be written as |f = g f|
+A recursive set-typed definition |f = e| can be rewritten as |f = g f|
 (the least fixpoint of |g|)
-for some non-recursive function |g|, namely |g = \x -> e[x/f]|.
+for some non-recursive function |g|, namely |g := \x -> e[x/f]|.
 By the denotational semantics for \salt{},
 |f| is equivalent to the union of
 |g failed|, |g (g failed)|, |g (g (g failed))| etc.
 If one knows that |g . set ~= set . g'|,
 one can write
-> g (g failed)) ~= g (g {failed}) ~= g {g' failed} ~= {g' (g' failed)}
-since |failed<:Set tau:>! = { failed<:tau:>! }| for all |tau|.
+> g (.. (g failed) ..) ~= g (.. (g {failed}) ..) ~= g (.. {g' failed} ..)
+>   ~= .. ~= {g' (.. (g' failed) ..)}
+because |failed<:Set tau:>! = { failed<:tau:>! }| for all |tau|
+since |set| has strict semantics.
 So |f| is equivalent to the union of
 |set (g' failed)|, |set (g' (g' failed))| etc.,
 which means it is equivalent to |f| defined as |f = set (g' f)|.
 
+\todo[inline]{Is that sufficient as an explanation?}
+\todo[inline]{Use explicit |fix| combinator? Or is that unnecessary?}
+
 In the concrete example above, we can choose
-|g = \y -> y >>= \x -> { Cons<:Nat:> 1 x }|
-to satisfy |ones = g (ones)|.
+|g := \y -> y >>= \x -> { Cons<:Nat:> 1 x }|
+to satisfy |ones = g ones|.
 Furthermore one can show that
 > g . set
 > ~= \y -> { y } >>= \x -> { Cons<:Nat:> 1 x }
@@ -315,37 +352,45 @@ Inlining |g'| yields:
 >
 > length :: Set (List a -> Set Nat)
 > length = { \list :: List a -> { length' list } }
-This is the optimal way of writing this function
+In this equivalent definition,
+it is obvious that |length| is deterministic.
+Furthermore, this is the optimal way of writing |length|
 and it was derived from the original translation
 using only well-specified program transformations.
 
 \section{Limitations and Further Work}
 
-While I have presented methods to analyze for many functions,
+While I have presented methods to analyze lots of functions,
 including recursive ones,
 I have not talked about functions with higher order arguments,
 like |map|.
 Whether such a function is deterministic depends on
 whether its higher order argument is deterministic or not.
+So it has to be decided at the call site.
 Inlining can solve that problem
-but in case of recursive functions
+but in case of recursive functions,
 it does not help.
-One could instead creating a special function |map_f|
+One could instead create a special function |map_f|
 for every call of |map f| occuring in the program,
 and replace the recursive calls to |map f| by |map_f|.
+In |map_f| one could then inline |f|
+and use the methods from above.
 However, if the recursive call uses a modified function,
+\ie not |f| again
+but say |f| composed with another function,
 this cannot be easily repaired.
+Even if it works, it is quite complicated.
 
 To avoid this complexity, it is probably better
 to use a type and effect system to track the nondeterminism in the program.
 Such an approach is described in \cite{nondetana}.
 
-However, the goal of this thesis was to analyze
+However, the goal in this thesis was to analyze
 the nondeterminism behavior of programs by translating them to \salt{}
 and applying program transformations.
 The methods I described here can be formalized
-and implemented.
-My implementation is able to analyze the nondeterminism of all the functions
+and I even implemented them.
+This implementation is able to analyze the nondeterminism of all the functions
 we discussed in this chapter.
 However, the details were quite technical and the proofs relatively long,
 so I did not include it here.
