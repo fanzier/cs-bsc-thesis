@@ -240,12 +240,12 @@ the following choice function can return any of its two arguments.
 With this definition,
 |choose 0 1| has two values, |0| and |1|.
 A Curry interpreter will display both of them,
-when asked for more solutions. (similar to Prolog)
+when asked for all solutions. (similar to Prolog)
 As another application,
 consider this definition of a non-deterministic list insertion
 and permutation function.
-(Here, the conventional list syntax is used
-instead of the custom data type from above.)
+(Here, the conventional list syntax with |[]| and |:| is used
+instead of the custom data type from above with |Nil| and |Cons|.)
 > insert x [] = [x]
 > insert x (first:rest) = choose (x:first:rest) (first:insert x rest)
 >
