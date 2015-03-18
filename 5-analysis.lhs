@@ -358,6 +358,15 @@ Furthermore, this is the optimal way of writing |length|
 and it was derived from the original translation
 using only well-specified program transformations.
 
+So far, we only considered directly recursive functions.
+But the transformation can easily be adapted
+to mutually recursive functions.
+For instance, say there are to functions |f| and |g|,
+recursively calling each other.
+Then one creates two new functions |f'| and |g'|
+that are mutually recursive.
+This works the same for three functions etc.
+
 \section{Limitations and Further Work}
 
 While I have presented methods to analyze lots of functions,
