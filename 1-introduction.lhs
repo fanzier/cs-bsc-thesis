@@ -2,7 +2,7 @@
 
 In the field of declarative programming languages,
 there are two important paradigms.
-One the one hand,
+On the one hand,
 functional programming languages like \emph{Haskell}
 are based on the lambda calculus
 and commonly include features like
@@ -20,7 +20,7 @@ and nondeterministic search for solutions.
 The declarative programming language \emph{Curry} aims
 to combine the most important features of both paradigms in one language.
 Curry is based on (a subset of) Haskell
-but integrates logic variables and non-deterministic search.
+but integrates logic variables and nondeterministic search.
 This functional-logic language is well-known and actively researched,
 so it makes sense to use it as an introduction to this paradigm.
 
@@ -128,10 +128,11 @@ it is essentially the only function with this type signature.
 
 Another very common example is function composition.
 > (.) :: (b -> c) -> (a -> b) -> a -> c
-> (f . g) x = f (g x)
-|(.)| is a higher-order binary operator
+> (.) f g x = f (g x)
+|(.)| is a higher-order function
 that composes its two function arguments.
-Using it, one can write
+It can also be written as an infix operator: |f . g| stands for |(.) f g|.
+Hence, one can write
 > applyTwice f = f . f
 because |applyTwice| simply composes the given function with itself.
 
@@ -190,8 +191,8 @@ the function is applied to |x|
 and recursively to the rest of the list.
 Haskell has special syntactic sugar
 for pattern matches on function arguments,
-which allows |map| to be written like this:
-> map _ Nil = Nil
+which allows |map| to be written as follows.
+> map f Nil = Nil
 > map f (Cons x rest) = Cons (f x) (map f rest)
 
 \subsection{Lazy Evaluation}
@@ -212,7 +213,7 @@ Consider the following program.
 > take 0 _ = Nil
 > take n (Cons x xs) = Cons x (take (n - 1) xs)
 It defines |zeros|, an infinite list of zeros,
-and |take|, a function returning the the first elements of a list.
+and |take|, a function returning the first elements of a list.
 For instance,
 > take 2 (Cons 1 (Cons 2 (Cons 3 Nil))) == Cons 1 (Cons 2 Nil)
 But also |take 2 zeros| terminates in finite time
@@ -240,9 +241,9 @@ the following choice function can return any of its two arguments.
 With this definition,
 |choose 0 1| has two values, |0| and |1|.
 A Curry interpreter will display both of them,
-when asked for all solutions. (similar to Prolog)
+when asked for all solutions (similarly to Prolog).
 As another application,
-consider this definition of a non-deterministic list insertion
+consider this definition of a nondeterministic list insertion
 and permutation function.
 (Here, the conventional list syntax with |[]| and |:| is used
 instead of the custom data type from above with |Nil| and |Cons|.)
@@ -257,12 +258,13 @@ or recursively inserts it later in the list.
 |insert 0 [3,4]| results in |[0,3,4]|, |[3,0,4]| or |[3,4,0]|.
 |permute| uses this function to insert the first element
 in the recursively permuted rest.
-Thus it non-deterministically computes all permutations of a list.
+Thus it nondeterministically computes all permutations of a list.
 
 Another new feature Curry offers are logic variables.
 It is a variable that is not assigned a value
 but instead is declared with the keyword |free|.
-The interpreter then searches for suitable assignments.
+The interpreter then searches for suitable assignments
+that satisfy the given constraints.
 
 > append [] ys = ys
 > append (x:xs) ys = x:append xs ys
@@ -273,13 +275,14 @@ The |append| function simply concatenates two lists
 and does not make use of nondeterminism.
 To retrieve the last element of a list,
 |last| specifies that this last element |e| must satisfy the constraint
-that concatenating some list |init| with |[e]| must yield the original list.
+|list =:= append init [e]|, \ie
+that appending |[e]| to some list |init| must yield the original list.
+When this constraint is satisfied, |e| is returned.
 As one might expect,
-a Curry interpreter will not blindly try every possible list
+a Curry interpreter will not blindly try every possible list for |init|
 until it finds the right one.
 Instead it uses a strategy called \emph{narrowing}
 that can be compared to Prolog's unification.
-The details will be discussed in Chapter 3.
 
 \section{\cumin{}}
 
@@ -296,9 +299,9 @@ like this.
 >   case choice of
 >     False -> x
 >     True -> y
-The logic variable |choice| non-deterministically assumes all boolean values,
+The logic variable |choice| nondeterministically assumes all boolean values,
 and as a consequence,
-the function non-deterministically returns either of its arguments.
+the function nondeterministically returns either of its arguments.
 Some further examples of \cumin{} function are listed below.
 
 > insert :: forall a. a -> List a -> List a
@@ -326,7 +329,8 @@ Some further examples of \cumin{} function are listed below.
 >   case append<:a:> init (Cons<:a:> e Nil<:a:>) == list of
 >     True -> e
 
-The syntax will be explained in detail later.
+The syntax, in particular the type signatures,
+will be explained in detail later.
 Notable differences to Curry include
 mandatory type signatures,
 explicit type variable instantiation for polymorphic functions,
