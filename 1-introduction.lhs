@@ -299,7 +299,7 @@ like this.
 The logic variable |choice| non-deterministically assumes all boolean values,
 and as a consequence,
 the function non-deterministically returns either of its arguments.
-The Curry examples from above can be translated like this.
+Some further examples of \cumin{} function are listed below.
 
 > insert :: forall a. a -> List a -> List a
 > insert x list = case list of
@@ -364,8 +364,8 @@ The lambda abstraction after |>>=| replaces
 |False| by |x| and |True| by |y| in the set |{False, True}|,
 thus forming the set |{x, y}|,
 which clearly represents the set of values of the nondeterministic function.
+The \cumin{} example function can be expressed in \salt{} as follows.
 
-The example from above translated looks like this.
 > append :: forall a. List a -> List a -> List a
 > append = \xs :: List a -> \ys :: List a -> case xs of
 >   Nil -> ys
@@ -382,6 +382,8 @@ The example from above translated looks like this.
 Since the type signature of |append| does not contain any set types,
 one can immediately know for sure
 that the function is deterministic.
+On the other hand, |last| uses |unknown| internally,
+so it must have set type.
 The code also demonstrates some other differences from \cumin{}, such as
 mandatory lambda abstractions instead of function argument notation and
 missing |let| bindings.

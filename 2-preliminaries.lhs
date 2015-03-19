@@ -30,7 +30,6 @@ unless otherwise stated.
 When specifying the well-formedness, evaluation or other \emph{judgments}
 about programs, types or expressions,
 the following notation is widely used.
-
 \[
 \AxiomC{Assumption 1}
 \AxiomC{Assumption 2}
@@ -38,7 +37,6 @@ the following notation is widely used.
 \TrinaryInfC{Consequence}
 \DisplayProof
 \]
-
 This means that the consequence is a valid judgment
 if all the assumptions can be shown to be valid judgments.
 Oftentimes, these judgments will only make sense in a certain \emph{context},
@@ -53,7 +51,7 @@ or a type constructor applied to a number of types,
 which must always be fully applied.
 A type constructor is one of the following.
 \begin{itemize}
-\item The name of a custom algebraic data type
+\item The name of an algebraic data type
 \item |->|, the function type constructor, with two arguments.
 It associates to the right.
 \item |Nat|, a primitive type for natural numbers.
@@ -63,8 +61,12 @@ It associates to the right.
 
 To formalize the type formation rules,
 one first needs to describe
-what type contexts look like.
+what type contexts look like. (\cref{contexts})
+These are the allowed contexts in typing judgments.
+The previous description of types is
+formalized in \cref{types}.
 
+\begin{figure}[t]
 \begin{gather*}
 \AxiomC{|isContext emptycontext|}
 \DisplayProof
@@ -88,10 +90,12 @@ what type contexts look like.
 \DisplayProof
 \quad\text{for an ADT |A|}
 \end{gather*}
+\caption{Context formation rules}
+\label{contexts}
+\hrulefill
+\end{figure}
 
-These are the allowed contexts in what follows.
-Let us now look at well-formed types.
-
+\begin{figure}
 \begin{gather*}
 \AxiomC{|Gamma,alpha ||- isType alpha|}
 \DisplayProof
@@ -114,42 +118,48 @@ Let us now look at well-formed types.
 \DisplayProof
 \quad\text{in \salt{}}
 \end{gather*}
+\caption{Type formation rules}
+\label{types}
+\hrulefill
+\end{figure}
 
 An algebraic data type is defined like it is in Haskell.
 It has a name |A|,
 is parameterized by zero or more type variables |vec alpha_l|,
 has one or more constructors |C_m|,
 each of which is specified by its name and its argument types |vec tau_mn|.
-> data A (vec alpha_l) = vec (C_m (vec tau_mn))
-As stated above, without the horizontal bars as an abbreviation,
-it would look like this.
 > data A alpha_1 .. alpha_l = C_1 tau_11 .. tau_1n | .. | C_m tau_m1 .. tau_mn
+According to the above conventions,
+I will often abbreviate it like this:
+> data A (vec alpha_l) = vec (C_m (vec tau_mn))
 
 The only type variables allowed in the types |vec tau_mn| are |vec alpha_l|.
 Higher-kinded type variables are not allowed,
 which means that a type variable cannot be applied to other types.
-This means that something like
-> data D f a = D (f a)
-is invalid in \cumin{} and \salt{}
+As a consequence, the following data type is invalid in \cumin{} and \salt{}
 although it is fine in Haskell.
+> data D f a = D (f a)
 
-Logic variables in \cumin{} and \salt{} cannot have any type;
+Logic variables in \cumin{} and the |unknown| primitive in \salt{}
+cannot have any type;
 only so called |Data| types are allowed.
 This is because values of logic variables have to be able to be enumerated.
 In contrast, values of function types cannot in general be enumerated
-since there may be uncountably many, e.g. |Nat -> Bool|.
+since there may be uncountably many, e.g. in the case |Nat -> Bool|.
 Most algebraic data  types, however, are enumerable,
 for instance |Bool|, |Nat|,
 |List tau| or |Tree tau| for any enumerable |tau|.
 To formalize this,
 we introduce another judgement |dataIdx A I|
-for an ADT |A| with |l| type parameters.
+for an ADT |A| with |l| type parameters
+where |I| has to be a subset of $\{1,\dots,l\}$.
 It states that |A (vec tau_l)| is a |Data| type
-if |tau_i| is, for each $i \in I$.
+if, for each $i \in I$, |tau_i| is a |Data| type.
 Essentially, an ADT is a |Data| type
-if the types of all constructors are |Data| types.
-The following rules capture this notion.
+if the types of the arguments of all constructors are |Data| types.
+The rules in \cref{data-types} capture this notion.
 
+\begin{figure}[t]
 \begin{gather*}
 \AxiomC{|Gamma, alpha, isData alpha ||- isData alpha|}
 \DisplayProof
@@ -170,14 +180,20 @@ The following rules capture this notion.
 \DisplayProof
 \quad\text{where |data A (vec alpha_l) = vec (C_m (vec tau_mn))|}
 \end{gather*}
+\caption{Rules for |Data| types}
+\label{data-types}
+\hrulefill
+\end{figure}
 
 Let us take a look at some examples.
-The deduction of |isData Bool| is quite simple.
+As all constructors of |Bool| are nullary,
+the deduction of |isData Bool| is quite simple.
 \begin{prooftree}
 \AxiomC{|Gamma ||- dataIdx Bool emptyset|}
 \UnaryInfC{|Gamma ||- isData Bool|}
 \end{prooftree}
-One can also deduce |dataIdx List (set 1)|. (using the abbreviation |Gamma' := Gamma, dataIdx List (set 1), a, isData a|)
+One can also deduce |dataIdx List (set 1)|,
+using the abbreviation |Gamma' := Gamma, dataIdx List (set 1), a, isData a|.
 \begin{prooftree}
   \AxiomC{|Gamma' ||- isData a|}
     \AxiomC{|Gamma' ||- dataIdx List (set 1)|}
@@ -185,17 +201,20 @@ One can also deduce |dataIdx List (set 1)|. (using the abbreviation |Gamma' := G
   \BinaryInfC{|Gamma' ||- isData (List a)|}
 \BinaryInfC{|Gamma ||- dataIdx List (set 1)|}
 \end{prooftree}
-Putting things together, |isData (List Bool)| holds, too.
+Putting these two results together,
+we can show that |isData (List Bool)| holds, too.
 \begin{prooftree}
   \AxiomC{|Gamma ||- dataIdx List (set 1)|}
   \AxiomC{|Gamma ||- isData Bool|}
 \BinaryInfC{|Gamma ||- isData (List Bool)|}
 \end{prooftree}
 
-As another example, consider the phantom type
-> data Phantom a = P
+If a type variable is used in no constructor,
+it does not have to be a |Data| type.
+As an example, consider the phantom type
+> data Phantom a = Phantom
 where the type parameter |a| only occurs on the left-hand side.
-|Phantom tau| is a |Data| type for any |tau| since its only value is |P|.
+|Phantom tau| is a |Data| type for any |tau| since its only value is |Phantom|.
 So, even for function types like |Nat -> Nat|,
 we have |isData (Phantom (Nat -> Nat))|.
 \begin{prooftree}
@@ -218,24 +237,30 @@ The type signature consists of \emph{type variables} to allow polymorphism,
 a \emph{type class context} which specifies
 that certain type variables have to be instantiated to |Data| types,
 and finally the actual function type.
-One does not need to write the empty context |() =>|,
+One does not need to write the empty context |() =>|
+if the function has no |Data| constraints,
 and if there are no type variables,
 the $\forall.$ may be droppped, as well.
 
-\cumin{} expressions are of the following form.
+The shape of \cumin{} expressions is shown in \cref{cumin-exp}.
+\begin{figure}[t]
 > e ::=  x | n | f<:vec tau_m:> | C<:vec tau_m:>
 >        | e_1 e_2 | e_1 + e_2 | e_1 == e_2 | failed<:tau:>
 >        | let x = e_1 in e_2 | let x :: tau free in e
 >        | case e of { vec(C_i (vec x_i_j) -> e_i;) }
 >        | case e of { vec(C_i (vec x_i_j) -> e_i;) x -> e' }
 > n ::= 0 | 1 | ..
+\caption{Syntax of \cumin{} expressions}
+\label{cumin-exp}
+\hrulefill
+\end{figure}
 As might be expected,
 the syntax includes variables and literals for natural numbers.
 Polymorphic functions and constructors
 have to be given type instantiations at the call site.
 In principle, these could be inferred automatically
 but this complicates type checking.
-For the sake of simplicity, we refrained from doing it.
+For the sake of simplicity, these annotations are mandatory.
 Function application is written by juxtaposition,
 it associates to the left and has highest binding precedence.
 The supported primitive operations are addition for natural numbers
@@ -244,9 +269,10 @@ As usual, the operator |+| binds more tightly than |==|.
 The former associates to the left and the latter is not associative.
 Parentheses can be used for structuring expressions.
 |failed| signifies that the computation does not yield a result.
-It can be used to cut off unwanted computation branches.
+It can be used to \emph{cut off} unwanted computation branches.
 Let bindings allow
-using the result of a computation more than once in an expression.
+using the result of a computation more than once in an expression
+by binding it to a variable |x|.
 Recursive let bindings are not allowed, \ie |x| must not occur in |e_1|.
 The construct |let .. free| introduces logic variables,
 it is the only logic feature in the language.
@@ -259,8 +285,9 @@ It only matches if none of the constructors before did.
 
 Besides the mathematical notation,
 there is also a plain-text representation.
-The correspondence is straightforward:
-
+The straightforward correspondence is shown in \cref{cumin-plain}.
+\begin{figure}[t]
+\centering
 \begin{tabular}{l l}
   Mathematical notation & Plain text \\
   \hline
@@ -270,21 +297,24 @@ The correspondence is straightforward:
   |f<:t:>| & \texttt{f<:t:>} \\
   |==| & \texttt{==} \\
 \end{tabular}
-
+\caption{Plain text representation of \cumin{}}
+\label{cumin-plain}
+\hrulefill
+\end{figure}
 As in Haskell, code can also be written using indentation
-instead of braces and semicola.
-For instance, a case expression can be written this way.
+instead of braces and semicola:
 > case e of
 >   C_1 .. -> ..
 >   C_2 .. -> ..
 
-There are some definitions that are so common
+There are some data types and functions that are so common and useful
 that we decided to put them in a so-called \emph{prelude},
 which is copied to the top of every program.
-It defines common data types like lists and boolean types
+It defines data types like lists and boolean types
 and functions that handle them.
-To be precise, the prelude contains the following declarations.
+The precise definitions of the prelude are listed in \cref{cumin-prelude}.
 
+\begin{figure}[t]
 > data Pair a b = Pair a b
 > data List a = Nil | Cons a (List a)
 > data Maybe a = Nothing | Just a
@@ -306,6 +336,10 @@ To be precise, the prelude contains the following declarations.
 > not :: Bool -> Bool
 > or :: Bool -> Bool -> Bool
 > snd :: forall a b. Pair a b -> b
+\caption{The \cumin{} Prelude}
+\label{cumin-prelude}
+\hrulefill
+\end{figure}
 
 Finally, there is some syntactic sugar
 to make programs easier to read and write.
@@ -315,11 +349,11 @@ This is desugared to the expression
 
 \subsection{Typing}
 
-Furthermore, expressions have to be well-typed.
+\cumin{} expressions have to be well-typed.
 For example, the term |True + 1| does not make sense,
-because the primitive operator |+| only accepts numbers as arguments.
-The typing rules are given below.
-
+because the primitive operator |+| only accepts natural numbers as arguments.
+The typing rules are given in \cref{cumin-typing}.
+\begin{figure}
 \begin{gather*}
 \AxiomC{|Gamma, x :: tau ||- x :: tau|}
 \DisplayProof
@@ -377,12 +411,15 @@ The typing rules are given below.
 \DisplayProof
 \quad\text{for every |data A (vec alpha_m) = vec (C_i (vec tau_i_j))|}
 \end{gather*}
-
+\caption{Typing rules for \cumin{} expressions}
+\label{cumin-typing}
+\hrulefill
+\end{figure}
 In order to type check functions, recall the shape of their definitions.
 > f :: forall (vec alpha_m). ((vec (Data alpha_i_j))) => tau_1 -> .. -> tau_n -> tau
 > f x_1 .. x_n = e
 Such a \cumin{} function |f| is well-typed
-if the following holds.
+if the following judgment holds.
 \[
 \AxiomC{|vec alpha_m, vec (isData alpha_i_j), vec (x_n :: tau_n) ||- e :: tau|}
 \DisplayProof
@@ -411,7 +448,7 @@ Let |Gamma := a, x :: a, y :: a|.
 \BinaryInfC{|Gamma ||- let c :: Bool free in case c of { True -> x; False -> y } :: a|}
 \end{prooftree}
 The judgment |Gamma ||- isData Bool| has been proven before.
-Similarly, one can prove that |map| is well-typed.
+Similarly, one can derive that |map| is well-typed.
 Let |Gamma := f :: a -> b, xs :: List a| and |Gamma' := Gamma, y :: a, ys :: List a|.
 \begin{prooftree}
 \small
@@ -442,7 +479,7 @@ The missing subderivations look like this.
 
 \section{\salt{} syntax and typing}
 
-The syntax of \salt{} is quite similar to \cumin{}.
+The syntax of \salt{} is quite similar to \cumin{}. (\cref{salt-exp})
 However, it replaces the |let .. free| construct
 with the keyword |unknown<:tau:>|,
 which represents the set of values of the type |tau|.
@@ -452,24 +489,30 @@ other primitives for sets are
 |set| for creating singleton sets
 and |>>=| for indexed unions.
 This operator binds least tightly and associates to the left.
-Also, \salt{} has explicit lambda abstractions.
+\begin{figure}[t]
 > e ::=  x | n | f<:vec tau_m:> | C<:vec tau_m:> | \x :: tau -> e
 >        | e_1 e_2 | e_1 + e_2 | e_1 == e_2 | failed<:tau:>
 >        | unknown<:tau:> | set e | e_1 >>= e_2
 >        | case e of { vec(C_i (vec x_i_j) -> e_i;) }
 >        | case e of { vec(C_i (vec x_i_j) -> e_i;) x -> e' }
 > n ::= 0 | 1 | ..
-As \salt{} has lambda abstractions,
+\caption{Syntax of \salt{} expressions}
+\label{salt-exp}
+\hrulefill
+\end{figure}
+As \salt{} has explicit lambda abstractions,
 there is no need for function arguments.
 Hence, function definitions are simpler than in \cumin{}.
 > f :: forall (vec alpha_m). ((vec (Data alpha_i_j))) => tau
 > f = e
 
 \salt{} has the same plain text representation as \cumin{}.
-The additional symbols are written as shown in the table.
+The additional symbols are written as shown in \cref{salt-plain}.
 Since \verb!Set! is a reserved type constructor,
 it cannot be the name of an ADT.
 
+\begin{figure}
+\centering
 \begin{tabular}{l l}
 Mathematical notation & plain text \\
 \hline
@@ -478,29 +521,39 @@ Mathematical notation & plain text \\
 |\| & \verb!\! \\
 |>>=| & \verb!>>=!
 \end{tabular}
+\caption{Plain text representation of \salt{} syntax}
+\label{salt-plain}
+\hrulefill
+\end{figure}
 
 For \salt{}, we also created a prelude with common definitions.
 It is mainly a manual translation of the \cumin{} prelude.
-There are only two differences.
+There are only three differences.
 > choose :: forall a. a -> a -> Set a
 > sMap :: forall a b. (a -> b) -> Set a -> Set b
-The nondeterministic nature of |choose| is no visible in the type,
-it returns a set.
+> guard :: forall a. Bool -> a -> a
+To construct a set with two element, there is |choose|.
+It puts its two arguments in a set.
 There is also a new function |sMap|
 which acts on sets like |map| acts on lists.
 It yields a set where the given function has been applied
 to every element of the original one.
+The last function can be used in an expression
+like |guard cond e|.
+It will yield the result of |e| only if |cond| is true
+and fail otherwise.
 
 There is also an alternative prelude that is generated
-by the translation described in Chapter 4.
+by the translation method described in Chapter 4.
 It behaves the same but due to the nature of the translation,
-the translated versions contain more sets than necessary, for example,
+its functions contain more sets than necessary, for example,
 |choose| is translated to |choose :: Set (a -> Set (a -> Set a))|.
 
-The typing rules are similar those of \cumin{}.
+The \salt{} typing rules are similar those of \cumin{}.
 The ones for let bindings are now unnecessary.
-Instead, we need rules for lambda abstractions,
-and most importantly, for handling sets.
+Instead, there are rules for lambda abstractions,
+and most importantly, for handling sets. (\cref{salt-typing})
+\begin{figure}
 \begin{gather*}
 \AxiomC{|Gamma, x :: tau' ||- e :: tau|}
 \UnaryInfC{|Gamma || (\x :: tau' -> e) :: tau' -> tau|}
@@ -519,6 +572,10 @@ and most importantly, for handling sets.
 \BinaryInfC{|Gamma ||- e_1 >>= e_2 :: Set tau'|}
 \DisplayProof
 \end{gather*}
+\caption{\salt{}-specific typing rules}
+\label{salt-typing}
+\hrulefill
+\end{figure}
 A function in the shape given above is well-typed
 if the following judgment is correct.
 \[
@@ -538,7 +595,7 @@ It is instructive to translate the \cumin{} programs above to \salt{}.
 >   Nil -> Nil<:b:>;
 >   Cons y ys -> Cons<:b:> (f<:a:> y) (map<:a,b:> f<:a:> ys)
 >   }
-Proving that this program is well-typed works similarly as above.
+Proving that |choose| is well-typed works similarly as above.
 Let |Gamma := a, x :: a, y :: a| and |Gamma' := Gamma, c :: Bool|.
 \begin{prooftree}
       \AxiomC{|..|}
@@ -580,15 +637,18 @@ To check type correctness, let |Gamma := a, b, f :: a -> b, xs :: Set a|.
 \section{Implementation}
 
 Before implementing a semantics or translation for the two languages,
-some groundwork has to be done.
+some groundwork had to be done.
 \cumin{} and \salt{} programs have to be parsed
 into an \emph{abstract syntax tree (AST)}.
-One needs a type checker for ASTs and also a pretty printer will be useful.
+A type checker for these ASTs is needed
+and also a pretty printer will be useful.
 This functionality was implemented together with Fabian Thorand,
 whose bachelor thesis is also concerned with \cumin{} and \salt{}.
 
 The implementation was done in Haskell and is split into three packages:
-\texttt{funlogic-common}, \texttt{language-cumin} and \texttt{language-salt}.
+\texttt{funlogic-common}, \texttt{language-cumin} and \texttt{language-salt}.\footnote{
+They can be found an Github:
+\url{https://github.com/fatho/ba-funlogic-common}}
 The first one contains common functionality for both \cumin{} and \salt{},
 like the representation of types.
 The other two packages deal with the two languages specifically,
@@ -604,14 +664,14 @@ A type is either a type variable or
 a type constructor applied to a list of types.
 Hence, |TCon "->" [TVar "a", TCon "Set" [TCon "Bool" []]]|
 is the representation of the \salt{} type |a -> Set Bool|.
-
 The representation of expressions is similarly given
 by introducing one constructor for each kind of expression
 from the previous sections.
+
 One notorious problem in compiler writing
 is the representation of bound variables.
 In our implementation, they are simply represented by their names.
-This causes a number of problems with substitution
+In general, this can cause a number of problems with substitution
 because free variables may be captured:
 Consider the two lambda terms |\x -> y| and |\y -> z|.
 Blindly substituting the former term for |z|
@@ -635,7 +695,9 @@ Instead of writing a parser by hand,
 we took the usual approach in the Haskell community
 and used a parser combinator library.
 The most well-known one is \texttt{parsec}
-but we chose \texttt{trifecta} by Edward Kmett
+but we chose \texttt{trifecta}\footnote{
+\url{http://hackage.haskell.org/package/trifecta}}
+by Edward Kmett
 because it has more readable and (subjectively) better error messages.
 As we wanted indentation-sensitive parsing,
 we used the library \texttt{indentation} \cite{indentation},
@@ -648,7 +710,8 @@ For instance, the parser for lambda abstraction
 >          <$>  (symbol "\\" *> varIdent)
 >          <*>  (symbol "::" *> complexType)
 >          <*>  (symbol "->" *> expression)
-|*>| combines two parsers by running the first one and then the second one,
+The combinator |*>| combines two parsers
+by running the first one and then the second one,
 returning the result of the second one.
 In this way, |lambdaE| first parses the bound variable,
 then its type, and then the expression.
@@ -663,11 +726,11 @@ they have to be checked for duplicates.
 Giving different functions the same name is obviously ambiguous
 and such programs have to be rejected.
 Similarly, ADT names must be unique among each other
-and the same holds for constructor names.
+and the same applies to constructor names.
 
 \subsection{Type checker}
 
-The type checker essentially implements the typing rules.
+The type checker is essentially a direct implementation of the typing rules.
 It runs as a monadic computation to keep track of the type variables
 and bound variables that are in scope.\footnote{
 Monads can be used to thread a context through a computation,
@@ -685,7 +748,8 @@ As soon as an inconsistency is found,
 a type error is reported.
 
 The only thing that deserves a special remark is inference of |Data| types.
-This is done once at the beginning of type checking and the result is stored.
+The inference of the |dataIdx A I| judgements is done once,
+at the beginning of type checking and the result is stored.
 Closely following the typing rules
 to determine the index set $I$ of type variables
 that need to be |Data| types would be inefficient
@@ -696,24 +760,26 @@ which type variables have to be |Data| types for the ADT to be one.
 Let $I_{|A|}$ be this set of constraints for an ADT |A|.
 It corresponds to the judgment |dataIdx A I|.
 In the beginning, every ADT |A| is assumed to be a |Data| type
-without any constraints.
-In each iteration, for each ADT |A|,
-type variables that are constructor arguments
-are added to this set.
-For constructor arguments that are type constructors applied to other types,
+without any constraints, \ie $I = \emptyset$.
+In each iteration, for each ADT |A|, and each constructor |C|,
+type variables in the argument type of |C| are added to this set.
+For argument types that are type constructors |D| applied to other types,
 we first check
-that the type constructor is |Nat| or an ADT that is a |Data| type,
+that the |D| is |Nat| or a |Data| type,
 according to the current knowledge.
 If not, |A| itself cannot be a |Data| type.
-Otherwise, we require the types to which the type constructor is applied
-to be |Data| types if the constraints of the type constructor require this.
+Otherwise, we require the types to which the |D| is applied
+to be |Data| types,
+but only those with an index in the constraint set $I_{|D|}$.
 
 In this way, more and more necessary |Data| constraints are accumulated
 until a fixed point is reached.
 Then, the constraints are also sufficient.
 Such a fixed point is reached
 since the syntactic nesting level of data types is bounded.
-This gives the same result as the formal typing rules
+When the maximum nesting level has been explored,
+there are no new constraints to be discovered.
+This procedure gives the same result as the formal typing rules
 because it requires no more than the necessary |Data| constraints.
 
 \subsection{Pretty-printing}
@@ -722,11 +788,12 @@ Besides a parser and type checker,
 we also implemented a pretty-printer,
 which transforms an AST into human-readable code.
 As for parsing, we use a combinator library for pretty printing,
-called \texttt{ansi-wl-pprint}.
+called \texttt{ansi-wl-pprint}\footnote{
+\url{http://hackage.haskell.org/package/ansi-wl-pprint}}.
 It is based on \cite{pretty} but with some extensions.
 This particular library allows colored output,
 which makes syntax highlighting in the terminal possible.
 The pretty-printer is aware of operator precedence,
 so it only uses parentheses where necessary.
-It is used for computer-generated programs, debugging
+It is used for automatically generated programs, debugging
 and in the REPL of the interpreter. (see Chapter 3)
