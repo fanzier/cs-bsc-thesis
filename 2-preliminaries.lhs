@@ -129,7 +129,7 @@ The only type variables allowed in the types |vec tau_mn| are |vec alpha_l|.
 Higher-kinded type variables are not allowed,
 which means that a type variable cannot be applied to other types.
 This means that something like
-> data Apply f a = Apply (f a)
+> data D f a = D (f a)
 is invalid in \cumin{} and \salt{}
 although it is fine in Haskell.
 

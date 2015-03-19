@@ -42,6 +42,8 @@
 %format C = "\mathsf{C}"
 %format D = "\mathsf{D}"
 %format A = "\mathsf{A}"
+%format B = "\mathsf{B}"
+%format F = "\mathsf{F}"
 %format Maybe = "\mathsf{Maybe}"
 %format List = "\mathsf{List}"
 %format Either = "\mathsf{Either}"
@@ -55,6 +57,14 @@
 %format Left = "\mathsf{Left}"
 %format Right = "\mathsf{Right}"
 %format Pair = "\mathsf{Pair}"
+%format Tree = "\mathsf{Tree}"
+%format IntTree = "\mathsf{IntTree}"
+%format Leaf = "\mathsf{Leaf}"
+%format Node = "\mathsf{Node}"
+%format Int = "\mathsf{Int}"
+%format DList = "\mathsf{DList}"
+%format Phantom = "\mathsf{Phantom}"
+
 
 %format Gamma'
 
