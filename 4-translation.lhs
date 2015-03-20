@@ -1,7 +1,7 @@
 \chapter{Translating \cumin{} to \salt{}}
 
 \cumin{} is convenient
-because non-determinism is implicit.
+because nondeterminism is implicit.
 On the other hand,
 this makes it harder to analyze
 whether a function is actually deterministic.
@@ -14,33 +14,45 @@ must have set type |Set|.
 \section{The translation rules}
 
 The translation method below is an adaption of \cite{orig}.
-It is pessimistic insofar
+The version presented here is different
+because the languages \cumin{} and \salt{} are more general:
+Constructors do not have to be fully applied,
+there are more ADTs than |List|, |Bool| and |Pair|,
+and the syntax for indexed unions is more general.
+As a consequence, one has to keep track of type information,
+in contrast to \cite{orig}
+where the transformation is purely syntactical.
+
+The translation method is pessimistic insofar
 as it transforms every \cumin{} expressions
 into a set-typed expressions
 even if it is deterministic.
-This shortcoming will be partly addressed in the next chapter.
+This shortcoming will be partly addressed in Section 4.2.
 
 \subsection{Translating types}
 
 Every \cumin{} expression of type |tau|
 is translated to a \salt{} expression of type |set (tytrans tau)|
-where |tytrans| inserts |Set| to the right of every |->|.
-Formally:
+where |tytrans| inserts |Set| to the right of every |->|. (\cref{trans-types})
+\begin{figure}[t]
 \begin{align*}
 |tytrans Nat| &= |Nat| \\
-|tytrans A| &= |A| \qquad \text{where |A| is the name of an ADT.} \\
+|tytrans (A tau_1 .. tau_n)| &= |A (tytrans tau_1) .. (tytrans tau_n)| \qquad \text{where |A| is the name of an ADT.} \\
 |tytrans alpha| &= |alpha| \qquad \text{where |alpha| is a type variable.} \\
-|tytrans (tau' -> tau)| &= |tytrans tau' -> set (tytrans tau)| \\
+|tytrans (tau' -> tau)| &= |tytrans tau' -> set (tytrans tau)|
 \end{align*}
-
+\caption{Translation of types}
+\label{trans-types}
+\hrulefill
+\end{figure}
 For example,
 a \cumin{} expression |f| of type |(Nat -> Bool) -> Nat| will be translated to
 a \salt{} expression of type |Set ((Nat -> Set Bool) -> Set Nat)|.
 The reason for the outer |Set| is
-that the |f| itself may be non-deterministic,
+that the |f| itself may be nondeterministic,
 i.e. it might represent multiple functions;
 for the |Set| in the argument
-that |f| may be given a non-deterministic function as an argument;
+that |f| may be given a nondeterministic function as an argument;
 and for the remaining |Set|
 that |f| may compute more than one natural number.
 
@@ -67,8 +79,9 @@ and the translation to \salt{} will look the same.
 
 \subsection{Translating expressions}
 
-How \cumin{} expressions are translated can be seen below.
+How \cumin{} expressions are translated can be seen in \cref{trans-exp}.
 |trans| denotes the conversion function.
+\begin{figure}[t]
 \begin{align*}
 \trans{|x|} &= |set x| \qquad \text{where |x| is a variable} \\
 \trans{|n|} &= |set n| \qquad \text{where |n| is a literal} \\
@@ -87,10 +100,13 @@ How \cumin{} expressions are translated can be seen below.
 \trans{|e_1 == e_2|} &= |trans e_1 >>= \x_1 :: tau_1 -> trans e_2 >>= \x_2 :: tau_2 -> set (x_1 == x_2| \\*
 &\qquad \text{where |trans e_i :: Set tau_i| and |x_i| are fresh variables.} \\
 \trans{|case e of { p_1 -> e_1; .. }|} &= |trans e >>= \x :: tau -> case x of { p_1 -> trans e_1; .. }| \\*
-&\qquad \text{where |trans e :: Set tau| and |x| is a fresh variable.} \\
+&\qquad \text{where |trans e :: Set tau| and |x| is a fresh variable.}
 \end{align*}
-
-As discussed above,
+\caption{Translation rule for expressions}
+\label{trans-exp}
+\hrulefill
+\end{figure}
+As mentioned before,
 an expression of type |tau| is translated to one of type |Set (tytrans tau)|.
 This is achieved by adding sufficiently many |Set| in the right places
 (cf. the first four rules).
@@ -115,14 +131,14 @@ The final step in translating \cumin{} programs to \salt{} programs
 are function declarations.
 Remember that a function declaration in \cumin{} is given by
 > f :: forall alpha_1 .. alpha_m. tau_1 -> .. -> tau_n -> tau
-> f x_1 .. x_l = e
+> f x_1 .. x_n = e
 where |e| denotes the expression
 on the right hand side of the function definition.
 
 Such a function is translated to the following \salt{} function.
 > f :: forall alpha_1 .. alpha_m. Set (tytrans (tau_1 -> .. -> tau_n -> tau))
-> f = set (\x_1 :: tytrans tau_1 -> set (.. set (\x_l :: tytrans tau_l -> trans e)))
-Note that we now have to use explicit |\|-abstractions
+> f = set (\x_1 :: tytrans tau_1 -> set (.. set (\x_n :: tytrans tau_n -> trans e)))
+Note that we now have to use explicit lambda abstractions
 (which did not even exist in \cumin{})
 because each (sub-)function needs to be wrapped in |set|-braces.
 
@@ -187,9 +203,8 @@ length = { \xs :: List a -> case xs of
 
 \section{Improving the generated \salt{} code}
 
-As we have seen above,
-the translation rules are relatively naïve.
-Translated expressions are often unnecessarily set-typed,
+As one can see in the example programs,
+the translated expressions are often unnecessarily set-typed,
 so there is a lot of \enquote{plumbing} with |set| and |>>=| required.
 However, there are some simple transformations
 that can be used to make the \salt{} code much more efficient.
@@ -258,11 +273,8 @@ in case of unnecessary let-bindings like
 The utility of the third monad law is not immediately obvious.
 However, it can be used to \enquote{re-associate} |>>=|-bindings,
 thus enabling the application of the first rule in some cases.
-For instance, consider the expression |x >>= \y -> { f } >>= \g -> g y|.
-At first, neither the first nor the second law can be applied
-since |>>=| associates to the left.
-(It is implicitly parenthesized like this:
-|(x >>= \y -> { f }) >>= \g -> g y|.)
+For instance, consider the expression |(x >>= \y -> { f }) >>= \g -> g y|.
+At first sight, neither the first nor the second law can be applied.
 The third monad law allows as to transform this into
 |x >>= \y -> ({ f } >>= \g -> g y)|.
 Now, the first monad law is applicable and yields
@@ -276,7 +288,7 @@ For instance, consider the \cumin{} expression
 Translating this to \salt{} and applying the first monad law yields:
 \begin{code}
 trans (Cons<:Nat:> coin Nil<:Nat:>!)
-~= coin >>= \c :: Nat -> { \xs :: List Nat -> { Cons<:Nat:> c xs } }
+~= (coin >>= \c :: Nat -> { \xs :: List Nat -> { Cons<:Nat:> c xs } })
   >>= \f :: (List Nat -> Set (List Nat)) -> f Nil<:Nat:>
 \end{code}
 Applying the third monad enables the first monad law and $\beta$-reduction:
@@ -296,7 +308,7 @@ In the example programs I looked at,
 the other direction was never beneficial.
 
 As a larger example,
-let us see at how the simplifications transforms the prelude function |length|.
+let us look at how the simplifications transforms the prelude function |length|.
 The original version is on the left,
 the simplified one on the right.\\[0.5em]
 \begin{minipage}{.5\textwidth}%
@@ -337,7 +349,9 @@ length' = \xs :: List a -> case xs of
 length :: forall a. Set (List a -> Set Nat)
 length = { \xs :: List a -> { length'<:a:> xs } }
 \end{code}
-However, it is not entirely clear
+How this transformation can be derived by hand
+is discussed in Section 5.4.
+However, it is not clear
 how a compiler might arrive at this solution
 and the complexity would be beyond the scope of a bachelor thesis.
 The current simplifications produce good results,
@@ -415,10 +429,14 @@ The reason is that
 blunders like forgetting a binder lead to type errors in the Haskell code
 because the variable types do not match up.
 
-\subsection{Overview}
+\subsection{General approach}
 
-The program \verb!cumin2salt! for the translation works as follows:
-The given \cumin{} program is parsed and
+I implemented  the translation method as a program called \verb!cumin2salt!.
+On execution, it is passed a \cumin{} program to translate,
+and whether the result should be simplified.
+My implementation proceeds as follows.
+
+The \cumin{} program is parsed and
 type checked.
 If there were no errors, it is translated to the nameless representation.
 This one, in turn, is transformed to a nameless \salt{} representation,
@@ -443,9 +461,10 @@ cumin2salt INPUT [-o OUTPUT] [-s|--simplify] [--with-prelude]
 \end{verbatim}
 The program is given a \cumin{} input file name and, possibly,
 a \salt{} output file name (default: \verb!Out.salt!).
-There is a flag to turn on the simplification rules
-and one to control
-whether or not the prelude functions should be included in the output.
+If the \salt{} output should be simplified,
+one should pass the option \verb!-s!.
+The switch \verb!--with-prelude! controls
+whether the prelude functions should be included in the output.
 Normally, the translated prelude functions need not be included,
 as they are provided by the alternative \salt{} prelude. (cf. Chapter 2.4)
 Of course, \verb!--help! can be used to show a help text.
