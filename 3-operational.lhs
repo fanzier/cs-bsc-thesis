@@ -20,8 +20,7 @@ An operational semantics for (a subset of) Curry can be found in \cite{bh},
 which is a modification of \cite{ahhov}.
 Based on this,
 Stefan Mehner describes such a semantics
-for the variant of \cumin{} without algebraic data types,
-as in \cite{orig}.
+for the variant of \cumin{} without algebraic data types from \cite{orig}.
 A few small changes and generalizations lead to the semantics
 I describe below.
 Before that, I want to point out some properties of \cumin{}
@@ -29,7 +28,7 @@ that may seem surprising at first.
 
 \section{Peculiarities of \cumin{}}
 
-To gain some intuition about nondeterminism in \cumin{},
+To gain a better understanding of nondeterminism in \cumin{},
 let us look at some examples of \cumin{} functions.
 
 > coin :: Nat
@@ -76,14 +75,14 @@ This is because when map is called,
 due to call-time choice.
 This means that it will act the same way on each list element.
 On the other hand,
-|map<:Nat,Nat:> maybeDouble1 [1,2]<:Nat:>!|
+|map<:Nat,Nat:> maybeDouble1 [1,3]<:Nat:>!|
 will evaluate to
 |[1,3]<:Nat:>!|, |[1,6]<:Nat:>!|, |[2,3]<:Nat:>!| or |[2,6]<:Nat:>!|.
 The reason is
 that |maybeDouble2| is not \enquote{directly} nondeterministic,
 only when applied to an argument.
 
-\section{Formal Description}
+\section{Formal Description of the Semantics}
 
 When evaluating \cumin{} expressions,
 we will have to keep track of variable assignments.
@@ -116,7 +115,7 @@ how such heap expression pairs are evaluated.
 When talking about evaluation,
 one has to specify
 when an expression is called evaluated.
-The following two notions will be useful:
+The following three notions will be useful:
 
 \begin{definition}[Normal Forms]
 An expression |e| (associated with a heap) is said to be
@@ -167,9 +166,14 @@ This is sometimes also called \enquote{forcing}.
 \end{enumerate}
 
 How can these normal forms be obtained?
-This is done using the rules below.
+This is done using the rules shown in
+\cref{logical-eval,functional-eval,force-eval},
 The rationale behind them is explained in the next section.
 
+\vfill
+
+\begin{figure}[h!]
+\hrulefill
 \begin{tabularx}{\textwidth}{r >{\setstretch{1.8}}X}
 {[Val]}
 &\AxiomC{|Delta : v ~>* Delta : v|}
@@ -266,7 +270,11 @@ but |b_i| is |False|.
 \hfill only if none of the constructor patterns
 before the catch-all pattern |x| matched the constructor |C|.
 \end{tabularx}
+\caption{Rules for logical evaluation}
+\label{logical-eval}
+\end{figure}
 
+\begin{figure}[t]
 \begin{tabularx}{\textwidth}{r >{\setstretch{1.8}}X}
 {[FNF]}
 &\AxiomC{|Delta : e ~>* Delta' : v|}
@@ -287,7 +295,12 @@ before the catch-all pattern |x| matched the constructor |C|.
 \hfill for any constructor |C| of the ADT |A| with argument types |tau_n|
 and where |vec y_n| are fresh variables
 \end{tabularx}
+\caption{Rules for functional evaluation}
+\label{functional-eval}
+\hrulefill
+\end{figure}
 
+\begin{figure}[h]
 \begin{tabularx}{\textwidth}{r >{\setstretch{1.8}}X}
 {[RNF]}
 &\AxiomC{|Delta : e ~> Delta' : v|}
@@ -304,11 +317,15 @@ and where |vec y_n| are fresh variables
 \DisplayProof
 \hfill where |f| is a constructor or top-level function
 \end{tabularx}
+\caption{Rules for evaluation to reduced normal form}
+\label{force-eval}
+\hrulefill
+\end{figure}
 
 \section{Explanation of the Semantics}
 
 First note that the evaluation of an expression is not unique
--- that is what non-determinism is about, after all.
+-- that is what nondeterminism is about, after all.
 Some expressions can even evaluate to infinitely many values.
 A simple example for that would be
 \[
@@ -324,7 +341,6 @@ A trivial example is |failed<:tau:>!|,
 which simply has no applicable reduction rule.
 This makes sense
 because this expression denotes failure.
-
 Having cleared this up,
 let us take a look at the individual rules of logical evaluation.
 \begin{itemize}
@@ -340,7 +356,7 @@ it does not need to be evaluated further.
   to ensure sharing.
   This avoids recomputing the same expression repeatedly.
   Also, if the heap were not updated,
-  a variable could non-deterministically evaluate to different values
+  a variable could nondeterministically evaluate to different values
   depending on where it is used,
   but instead, call-time choice is desired.
   \item \textbf{Let.}
@@ -348,13 +364,17 @@ it does not need to be evaluated further.
   the bound variable and expression are added to the heap
   and the rest of the expression is evaluated.
   The variable has to be replaced by a fresh name
-  so that it won't shadow other heap variables.
+  so that it will not shadow other heap variables.
   Note that the evaluation of the bound expression is deferred
-  until it is needed. (\emph{lazy evaluation})
+  until it is needed (Lookup).
+  This is \emph{lazy evaluation}.
   \item \textbf{LetFree.}
   Evaluating |let .. free| bindings work completely analogously.
   \end{itemize}
-\item \textbf{Function application}
+\item \textbf{Function application.}
+There are three rules governing function application.
+Together, they ensure the intended behavior:
+lazy evaluation and call-time choice.
   \begin{itemize}
   \item \textbf{Fun.}
   This rule can be used whenever a top-level function is fully applied
@@ -363,7 +383,7 @@ it does not need to be evaluated further.
   of the function definition,
   with variables and types properly substituted.
   The reason that the arguments must be variables is
-  to ensure call-time choice.
+  to ensure call-time choice and sharing.
   \item \textbf{Flatten.}
   To be able to apply the previous rule,
   all function arguments must be variables.
@@ -441,7 +461,7 @@ One of the following two rules can be applicable.
   is chosen.
   This acts just like a |let| binding,
   the only difference being that the bound expression
-  is already in flat normal form.
+  is always in flat normal form.
   \end{itemize}
 \end{itemize}
 
@@ -457,7 +477,7 @@ this is also the result of functional evaluation.
 \item \textbf{Guess$_n$.}
 If an expression evaluates to a logic variable of type |Nat|,
 its flat normal form is any natural number.
-The value of the variable is updated on the heap, as before.
+The value of the variable is updated on the heap, too.
 \item \textbf{Guess$_C$.}
 If an expression evaluates to a logic variable
 with an algebraic data type,
@@ -466,7 +486,7 @@ fully applied to new logic variables that are added to the heap.
 The value of the original variable is updated on the heap, as before.
 \end{itemize}
 
-These last two rules are the source of non-determinism.
+These last two rules are the source of nondeterminism.
 Which constructor or which natural number is chosen for a logic variable
 is not determined,
 in contrast to the other rules
@@ -497,9 +517,13 @@ Starting simple, let us look at the logical evaluation of |double 1|.
   \AxiomC{|[y /-> 1] : y ~>* [y /-> 1] : 1 |}
   \LeftLabel{Lookup}
   \UnaryInfC{|[y /-> 1] : y ~>* [y /-> 1] : 1 |}
+  \LeftLabel{FNF}
+  \UnaryInfC{|[y /-> 1] : y ~> [y /-> 1] : 1 |}
   \AxiomC{|[y /-> 1] : y ~>* [y /-> 1] : 1 |}
   \LeftLabel{Lookup}
   \UnaryInfC{|[y /-> 1] : y ~>* [y /-> 1] : 1 |}
+  \LeftLabel{FNF}
+  \UnaryInfC{|[y /-> 1] : y ~> [y /-> 1] : 1 |}
 \LeftLabel{Plus}
 \BinaryInfC{|[y /-> 1] : y + y ~>* [y /-> 1] : 2|}
 \LeftLabel{Fun}
@@ -510,7 +534,7 @@ Starting simple, let us look at the logical evaluation of |double 1|.
 \UnaryInfC{|[] : double 1 ~>* [y /-> 1] : 2|}
 \end{prooftree}
 
-Nondeterminism can lead to more than one results.
+Nondeterminism can lead to more than one result.
 One of the simplest possible examples is
 |let x :: Bool free in x|.
 Its flat normal forms are |False| and |True|:
@@ -554,12 +578,12 @@ where the left subderivation continues like this:
 \end{prooftree}
 and the right one like this:
 \begin{prooftree}
-    \AxiomC{|Delta[c' /-> free :: Bool] : c ~>* Delta[c' /-> free :: Bool] : c|}
+    \AxiomC{|Delta[c' /-> free :: Bool] : c' ~>* Delta[c' /-> free :: Bool] : c'|}
     \LeftLabel{Guess$_|False|$}
-    \UnaryInfC{|Delta[c' /-> free :: Bool] : c ~> Delta' : False|}
+    \UnaryInfC{|Delta[c' /-> free :: Bool] : c' ~> Delta' : False|}
     \AxiomC{|Delta' : 0 ~>* Delta' : 0|}
   \LeftLabel{CaseCon}
-  \BinaryInfC{|Delta[c' /-> free :: Bool] : case c of { False -> 0; .. } ~>* Delta' : 0|}
+  \BinaryInfC{|Delta[c' /-> free :: Bool] : case c' of { False -> 0; .. } ~>* Delta' : 0|}
   \LeftLabel{Free}
   \UnaryInfC{|Delta : let c :: Bool free in case c of { False -> 0; True -> 1 } ~>* Delta' : 0|}
   \LeftLabel{Fun}
@@ -572,7 +596,7 @@ and the right one like this:
 
 A completely analogous derivation
 that uses Guess$_|True|$ instead of Guess$_|False|$
-yields the other evaluation |[] : coin ~>* [c' /-> True] : 1|.
+yields the other evaluation |[] : coin ~>* Delta[c' /-> True] : 1|.
 
 \subsection{Call-time choice}
 
@@ -687,7 +711,7 @@ which generates such an evaluation tree,
 and traversing this tree,
 for example using depth-first or breadth-first search.
 This may sound inefficient at first,
-as only parts of the generated tree may be actually needed.
+as only parts of the generated tree may actually be needed.
 However, since Haskell is a lazy language,
 the tree is generated on demand only,
 while being traversed.
@@ -721,7 +745,8 @@ flat normal forms and values, respectively.
 |EvalT| is a (state and reader) monad transformer
 that manages the state of the computation,
 namely the heap and a counter for generating fresh names,
-and an environment with the data types and functions of the \cumin{} program.
+as well as an environment
+with the data types and functions of the \cumin{} program.
 |TreeM| is a monad that supports nondeterminism
 by building an evaluation tree.
 |EvalT TreeM| is a monad
@@ -737,7 +762,7 @@ To guarantee that all variables are fresh,
 every new variable name includes the current value of a counter
 which is increased afterwards,
 hence ensuring that all generated variables are unique.
-Avoiding variable capture (cf. Section 2.5.1) on substitution
+Avoiding variable capture on substitution (cf. Section 2.5.1)
 has to be taken care of as well.
 In this case, however, it cannot happen
 since one only ever substitutes fresh variables for existing ones.
@@ -749,7 +774,7 @@ only the Plus rule can be applied.
 In other cases, like in case expressions or equality tests,
 parts of the expression have to be evaluated,
 and then there is only one rule that matches.
-Logic variables are inherently non-deterministic,
+Logic variables are inherently nondeterministic,
 so in this case more than one rule is applicable,
 and the evaluation tree branches.
 The only remaining case is function application.
@@ -779,7 +804,7 @@ If the result is in RNF, nothing is to be done. (RNF rule)
 Otherwise, the subexpressions are recursively forced. (Force rule)
 
 One more thing to discuss is guessing natural numbers.
-One could simply generate them like this:
+One could simply generate them in a tree like this:
 \begin{center}
 \small
 \Tree [.|free :: Nat|
@@ -828,6 +853,7 @@ In fact, this type constructor represents
 the free monad over the list functor.}
 where |return| creates a leaf
 and the bind operation |>>=| performs substitution on the leaves.
+\todo{Discuss monads before?}
 The operation that is important for nondeterminism is given by the function
 > branch :: [a] -> Tree a
 > branch = Branches . map Leaf
@@ -854,8 +880,8 @@ It can be given a monad instance
 that performs much better.
 For certain evaluation trees with lots of branches,
 it was more than ten times faster.
-Such a |CTree| is then converted to a |Tree|,
-which can be traversed.
+Such a |CTree| is converted to a |Tree| after construction,
+so that it can be traversed.
 
 I implemented four kinds of traversals:
 breadth-first search and depth-first search,
@@ -867,7 +893,7 @@ not every solution will be found in finite time.
 Breadth-first search is complete
 but uses more memory.
 A more detailed comparison of the two
-can be found in the \enquote{Assessment} section.
+can be found in the Section 3.6.
 
 \subsection{REPL}
 
@@ -916,12 +942,6 @@ Current settings:
  * strategy=bfs:
    The search strategy: bfs, dfs
 > :set depth=3
-> :get
-Current settings:
- * depth=3:
-   The search depth limit. Values: inf, 0, 1, 2, ...
- * strategy=bfs:
-   The search strategy: bfs, dfs
 > let x :: List Bool free in x
  :: List Bool
  = Nil<:Bool:>
@@ -965,7 +985,7 @@ and the computation time is displayed afterwards.
 Evaluation can also be interrupted with the key combination \verb!Ctrl + C!,
 which is useful for non-terminating expressions.
 
-There are two of parameters that the user can change,
+There are two parameters that the user can change,
 namely the search depth limit, which is infinity by default,
 and the search strategy, which is BFS by default.
 The values of the parameters can be viewed with \verb!:get!
@@ -984,7 +1004,10 @@ Dividing two Peano numbers using a free variable and multiplication;
 Multiplying two primitive |Nat| numbers;
 finding the last element of a list, as shown in the introduction;
 sorting a list by trying all permutations.
+The results are shown in \cref{perf-bfs-dfs}.
 
+\begin{figure}[t]
+\centering
 \begin{tabular}{l l l}
 Program & BFS & DFS \\
 \hline
@@ -993,6 +1016,10 @@ Peano division & 11.1 s & 11.2 s \\
 Last & 0.9 s & 1.0 s \\
 Permutation sort & 0.50 s & 0.55 s \\
 \end{tabular}
+\caption{Running times with different search strategies}
+\label{perf-bfs-dfs}
+\hrulefill
+\end{figure}
 
 As one can see, in all the test cases,
 BFS is a little faster than DFS.
