@@ -8,7 +8,7 @@ are based on the lambda calculus
 and commonly include features like
 first-class functions,
 algebraic data types,
-and powerful typing systems.
+and powerful type systems.
 On the other hand,
 logic programming languages like \emph{Prolog}
 are based on first-order logic
@@ -17,7 +17,7 @@ computing with partial information,
 constraint solving,
 and nondeterministic search for solutions.
 
-The declarative programming language \emph{Curry} aims
+The declarative programming language \emph{Curry} \cite{curry} aims
 to combine the most important features of both paradigms in one language.
 Curry is based on (a subset of) Haskell
 but integrates logic variables and nondeterministic search.
@@ -76,8 +76,8 @@ The following examples should illustrate the concept.
 > double x = 2 * x
 >
 > factorial :: Int -> Int
-> factorial 0 = 1
-> factorial n = n * factorial (n - 1)
+> factorial 0  = 1
+> factorial n  = n * factorial (n - 1)
 >
 > min :: Int -> Int -> Int
 > min x y = if x < y then x else y
@@ -104,7 +104,7 @@ Applying this function to |double| results in
 > quadruple :: Int -> Int
 > quadruple = applyTwice double
 which applies |double| to its argument twice,
-i.e. multiplies its argument by four.
+\ie multiplies its argument by four.
 
 \subsection{Polymorphism}
 
@@ -124,7 +124,7 @@ Another simple example is the identity function.
 > id x = x
 As a matter of fact,
 it is essentially the only function with this type signature.
-(This is an example of free theorems, mentioned earlier.)
+(This is a consequence of the free theorem for |id|.)
 
 Another very common example is function composition.
 > (.) :: (b -> c) -> (a -> b) -> a -> c
@@ -141,19 +141,19 @@ because |applyTwice| simply composes the given function with itself.
 Non-primitive data types in Haskell
 take the form of \emph{algebraic data types (ADTs)}.
 They are defined by giving a name to the new type
-and listing all its constructors for that type,
+and listing all constructors for that type,
 separated by vertical bars.
 Each constructor has a name and takes a number of arguments,
 the types of which have to be specified.
 > data Bool = False | True
-> data IntTree = Leaf Int | Node Tree Tree
+> data IntTree = Leaf Int | Node IntTree IntTree
 The first data type has two nullary constructors,
 |False| and |True|.
 These constitute its only values.
 The second data type specifies a binary tree
 whose leafs are annotated with an integer.
 Its values include for instance |Leaf 0|
-or | Node (Leaf 10) (Node (Leaf 7) (Leaf 2))|.
+or |Node (Leaf 10) (Node (Leaf 7) (Leaf 2))|.
 
 Data types can also be polymorphic.
 To this end, type variables can be added after the name of the ADT
@@ -164,7 +164,7 @@ Singly-linked lists are also represented as ADTs:
 > data List a = Nil | Cons a (List a)
 Here, |Nil| represents the empty list
 and |Cons| prepends one element to another list.
-As an example, the list 1, 2, 3 is represented
+As an example, the list 1,2,3 is represented
 by |Cons 1 (Cons 2 (Cons 3 Nil)) :: List Int|.
 In Haskell,
 there is special syntax for lists:
@@ -180,8 +180,8 @@ In the simplest form,
 this is achieved with a |case| expression:
 > map :: (a -> b) -> List a -> List b
 > map f list = case list of
->   Nil -> Nil
->   Cons x rest -> Cons (f x) (map f rest)
+>   Nil          -> Nil
+>   Cons x rest  -> Cons (f x) (map f rest)
 |map| applies a function to every element of a list.
 It inspects the list by |case| splitting over its value.
 If it is the empty list |Nil|,
@@ -192,8 +192,8 @@ and recursively to the rest of the list.
 Haskell has special syntactic sugar
 for pattern matches on function arguments,
 which allows |map| to be written as follows.
-> map f Nil = Nil
-> map f (Cons x rest) = Cons (f x) (map f rest)
+> map f Nil            = Nil
+> map f (Cons x rest)  = Cons (f x) (map f rest)
 
 \subsection{Lazy Evaluation}
 
@@ -202,16 +202,14 @@ Haskell's evaluation strategy is lazy.
 That means it evaluates expressions only as much as is necessary.
 Broadly speaking,
 the only way to evaluate something is
-by pattern matching on it.\footnote{
-|seq| is an exception, of course,
-but this goes beyond the scope of this overview.}
+by pattern matching on it.
 Consider the following program.
 > zeros :: List Int
 > zeros = Cons 0 zeros
 >
 > take :: Int -> List a -> List a
-> take 0 _ = Nil
-> take n (Cons x xs) = Cons x (take (n - 1) xs)
+> take 0 _            = Nil
+> take n (Cons x xs)  = Cons x (take (n - 1) xs)
 It defines |zeros|, an infinite list of zeros,
 and |take|, a function returning the first elements of a list.
 For instance,
@@ -227,8 +225,6 @@ Since |take| does not require the value of |zeros| in the last step
 because |take 0| does not pattern match on the list,
 therefore |zeros| is not evaluated further
 and the program does not run into an infinite loop.
-
-\todo[inline]{Include type classes?}
 
 \section{Curry}
 
@@ -247,11 +243,11 @@ consider this definition of a nondeterministic list insertion
 and permutation function.
 (Here, the conventional list syntax with |[]| and |:| is used
 instead of the custom data type from above with |Nil| and |Cons|.)
-> insert x [] = [x]
-> insert x (first:rest) = choose (x:first:rest) (first:insert x rest)
+> insert x []            = [x]
+> insert x (first:rest)  = choose (x:first:rest) (first:insert x rest)
 >
-> permute [] = []
-> permute (first:rest) = insert first (permute rest)
+> permute []            = []
+> permute (first:rest)  = insert first (permute rest)
 To insert an object at any place in a list,
 |insert| puts it at the beginning
 or recursively inserts it later in the list.
@@ -266,8 +262,8 @@ but instead is declared with the keyword |free|.
 The interpreter then searches for suitable assignments
 that satisfy the given constraints.
 
-> append [] ys = ys
-> append (x:xs) ys = x:append xs ys
+> append []      ys  = ys
+> append (x:xs)  ys  = x:append xs ys
 >
 > last list | list =:= append init [e] = e where init, e free
 
@@ -282,7 +278,7 @@ As one might expect,
 a Curry interpreter will not blindly try every possible list for |init|
 until it finds the right one.
 Instead it uses a strategy called \emph{narrowing}
-that can be compared to Prolog's unification.
+that can be compared to Prolog's resolution.
 
 \section{\cumin{}}
 
@@ -306,21 +302,21 @@ Some further examples of \cumin{} function are listed below.
 
 > insert :: forall a. a -> List a -> List a
 > insert x list = case list of
->   Nil -> Cons<:a:> x Nil<:a:>
->   Cons first rest -> choose<:a:>
+>   Nil              -> Cons<:a:> x Nil<:a:>
+>   Cons first rest  -> choose<:a:>
 >     (Cons<:a:> x list)
 >     (Cons<:a:> first (insert<:a:> x rest))
 >
 > permute :: forall a. List a -> List a
 > permute list = case list of
->   Nil -> Nil<:a:>
->   Cons first rest -> insert<:a:> first (permute<:a:> rest)
+>   Nil              -> Nil<:a:>
+>   Cons first rest  -> insert<:a:> first (permute<:a:> rest)
 >
 >
 > append :: forall a. List a -> List a -> List a
 > append xs ys = case xs of
->   Nil -> ys
->   Cons first rest -> Cons<:a:> first (append<:a:> rest ys)
+>   Nil              -> ys
+>   Cons first rest  -> Cons<:a:> first (append<:a:> rest ys)
 >
 > last :: forall a. Data a => List a -> a
 > last list =
@@ -328,6 +324,7 @@ Some further examples of \cumin{} function are listed below.
 >   let init :: List a free in
 >   case append<:a:> init (Cons<:a:> e Nil<:a:>) == list of
 >     True -> e
+>     False -> failed<:a:>
 
 The syntax, in particular the type signatures,
 will be explained in detail later.
@@ -344,7 +341,7 @@ written |Set|.
 Unlike \cumin{}, it does not have the |let .. free| construct.
 Instead, there is a special keyword |unknown|.
 For a certain class of types,
-including typical ADT types,
+including typical ADTs,
 it represents the set of all values of that type.
 For example, |unknown<:Bool:>| represents the set |{False, True}|
 and corresponds to the \cumin{} expression |let x :: Bool free in x|.
@@ -366,14 +363,18 @@ as the following translation of the |choose| function demonstrates.
 
 The lambda abstraction after |>>=| replaces
 |False| by |x| and |True| by |y| in the set |{False, True}|,
-thus forming the set |{x, y}|,
-which clearly represents the set of values of the nondeterministic function.
-The \cumin{} example function can be expressed in \salt{} as follows.
+thus forming the set |{x, y}|.
+This means that,
+while the \cumin{} function |choose| nondeterministically returns
+either of its arguments,
+the \salt{} version returns all these results as a set.
+The \cumin{} example functions from above
+can be expressed in \salt{} as follows.
 
 > append :: forall a. List a -> List a -> List a
 > append = \xs :: List a -> \ys :: List a -> case xs of
->   Nil -> ys
->   Cons first rest -> Cons<:a:> first (append<:a:> rest ys)
+>   Nil              -> ys
+>   Cons first rest  -> Cons<:a:> first (append<:a:> rest ys)
 >
 > last :: forall a. Data a => List a -> Set a
 > last = \list :: List a ->
@@ -392,3 +393,5 @@ The code also demonstrates some other differences from \cumin{}, such as
 mandatory lambda abstractions instead of function argument notation and
 missing |let| bindings.
 The syntax will be described in detail in the next chapter.
+
+\todo[inline]{Tell about rest of thesis!}
