@@ -115,23 +115,20 @@ sowie Zitate kenntlich gemacht habe.
 
 \chapter*{Abstract}
 Functional-logic languages like Curry aim
-to combine the strength of both functional and logic languages.
+to combine the strengths of both functional and logic languages.
 In order to establish free theorems for such languages,
 the authors of \cite{orig} have focused their attention
 on a language fragment they call \emph{\cumin{}},
 which can be translated to another language called \emph{\salt{}}
-that makes logic features like non-determinism more explicit.
+that makes logic features like nondeterminism more explicit.
 
-The aim of this thesis is
-to give a more detailed exposition of the two languages
-and to document an implementation
-of an operational semantics for \cumin{} and the translation to \salt{}.
-As the translation described in the paper is rather naïve
-in that it assumes everything to be non-deterministic
-and as a consequence,
-code that does not use logic features is compiled to a cumbersome result.
-I explored ways to reduce the amount of unnecessary non-determinism
-in the generated SaLT code.
+In this thesis, I will give a detailed exposition of the two languages.
+Moreover, I will document
+the implementation of an operational semantics for \cumin{}
+and of a translation algorithm to \salt{} programs.
+I will describe how the generated \salt{} code can be simplified
+and how it can be used to analyze
+the use of nondeterminism in the original \cumin{} programs.
 
 \tableofcontents
 
