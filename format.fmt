@@ -37,33 +37,8 @@
 
 %format |- = "\vdash"
 
-%format Data = "\mathsf{Data}"
-%format Nat = "\mathsf{Nat}"
-%format C = "\mathsf{C}"
-%format D = "\mathsf{D}"
-%format A = "\mathsf{A}"
-%format B = "\mathsf{B}"
-%format F = "\mathsf{F}"
-%format Maybe = "\mathsf{Maybe}"
-%format List = "\mathsf{List}"
-%format Either = "\mathsf{Either}"
-%format Bool = "\mathsf{Bool}"
-%format True = "\mathsf{True}"
-%format False = "\mathsf{False}"
-%format Nil = "\mathsf{Nil}"
-%format Cons = "\mathsf{Cons}"
-%format Nothing = "\mathsf{Nothing}"
-%format Just = "\mathsf{Just}"
-%format Left = "\mathsf{Left}"
-%format Right = "\mathsf{Right}"
-%format Pair = "\mathsf{Pair}"
-%format Tree = "\mathsf{Tree}"
-%format IntTree = "\mathsf{IntTree}"
-%format Leaf = "\mathsf{Leaf}"
-%format Node = "\mathsf{Node}"
-%format Int = "\mathsf{Int}"
-%format DList = "\mathsf{DList}"
-%format Phantom = "\mathsf{Phantom}"
+%% Format Constructors:
+%subst conid a = "\mathsf{" a "}"
 
 
 %format Gamma'
