@@ -2,29 +2,34 @@
 
 In this chapter,
 I will give a more precise description of \cumin{} and \salt{},
-as well as some remarks on the implementation of parsers and type checkers,
-which was done together with Fabian Thorand.
+as well as some remarks on the implementation of parsers and type checkers.
+This was done together with Fabian Thorand,
+who wrote his bachelor thesis,
+which is concerned with other aspects of \cumin{} and \salt{},
+over the same period of time.
 
 \section{Notation and Conventions}
 
 In the following,
 a sequence of objects |z_1 .. z_n| will be denoted |vec z_n|.
+An empty sequence, \ie $n = 0$, is allowed.
 If the index is unclear,
-it is written |((vec z_n))<:n:>|,
+it is written |((vec z_n))<:n:>!|,
 or even $|((vec z_n))|_{n \in S}$
 where $S$ denotes the range of $n$.
-|e[y/x]| means replacing every occurence of |x| in |e| with |y|.
+The notation |e[y/x]| means
+replacing every unbound occurrence of |x| in |e| with |y|.
 By convention,
-|alpha, beta| denote type variables,
-|rho, tau| denote types,
-|x,y| denote variables,
-|m,n| denote natural numbers,
-|p| denotes a pattern in pattern matches,
-|e| denotes an expression,
-|f| denotes a function,
-|C| denotes a constructor,
-|A| denotes an algebraic data type, and
-|Gamma| denotes a context,
+|alpha, beta| denote type variables;
+|rho, tau| denote types;
+|x,y| denote variables;
+|m,n| denote natural numbers;
+|p| denotes a pattern in pattern matches;
+|e| denotes an expression;
+|f| denotes a function;
+|C| denotes a constructor;
+|A| denotes an algebraic data type;
+and |Gamma| denotes a context,
 unless otherwise stated.
 
 When specifying the well-formedness, evaluation or other \emph{judgments}
@@ -43,6 +48,8 @@ Oftentimes, these judgments will only make sense in a certain \emph{context},
 denoted |Gamma|.
 The judgment is then written with the turnstile symbol:
 $\Gamma \vdash \text{judgment}$.
+More details on the presentation of typing systems
+can be found in \cite{typing-systems}.
 
 \section{Types in \cumin{} and \salt{}}
 
@@ -61,10 +68,18 @@ It associates to the right.
 
 To formalize the type formation rules,
 one first needs to describe
-what type contexts look like. (\cref{contexts})
+what type contexts look like (\cref{contexts}).
 These are the allowed contexts in typing judgments.
 The previous description of types is
 formalized in \cref{types}.
+
+Typing judgments are always with respect to a given program $P$.
+After all, typing judgments can depends on the ADTs defined in $P$ and,
+as we will see later,
+on the function definitions in $P$, too.
+Because of that, we would theoretically have to index all typing judgments
+by that program.
+However, we omit the index for the sake of readability.
 
 \begin{figure}[t]
 \begin{gather*}
@@ -95,7 +110,7 @@ formalized in \cref{types}.
 \hrulefill
 \end{figure}
 
-\begin{figure}
+\begin{figure}[t]
 \begin{gather*}
 \AxiomC{|Gamma,alpha ||- isType alpha|}
 \DisplayProof
@@ -123,7 +138,11 @@ formalized in \cref{types}.
 \hrulefill
 \end{figure}
 
-An algebraic data type is defined like it is in Haskell.
+While there are only three built built in algebraic data types in \cite{orig},
+namely lists, pairs and booleans,
+we considered this to be too limiting
+and decided to augment the languages with general ADTs.
+Such an algebraic data type is defined like it is in Haskell.
 It has a name |A|,
 is parameterized by zero or more type variables |vec alpha_l|,
 has one or more constructors |C_m|,
@@ -141,16 +160,19 @@ although it is fine in Haskell.
 > data D f a = D (f a)
 
 Logic variables in \cumin{} and the |unknown| primitive in \salt{}
-cannot have any type;
+cannot have any arbitrary type;
 only so called |Data| types are allowed.
 This is because values of logic variables have to be able to be enumerated.
-In contrast, values of function types cannot in general be enumerated
-since there may be uncountably many, e.g. in the case |Nat -> Bool|.
-Most algebraic data  types, however, are enumerable,
+As a counterexample, values of function types
+do not have a natural structure for enumeration.
+Most algebraic data  types, however, are structurally enumerable,
 for instance |Bool|, |Nat|,
 |List tau| or |Tree tau| for any enumerable |tau|.
-To formalize this,
-we introduce another judgement |dataIdx A I|
+They can be enumerated because all constructors can be listed
+and their arguments are enumerable.
+
+To formalize this notion,
+we introduce another judgment |dataIdx A I|
 for an ADT |A| with |l| type parameters
 where |I| has to be a subset of $\{1,\dots,l\}$.
 It states that |A (vec tau_l)| is a |Data| type
@@ -158,6 +180,10 @@ if, for each $i \in I$, |tau_i| is a |Data| type.
 Essentially, an ADT is a |Data| type
 if the types of the arguments of all constructors are |Data| types.
 The rules in \cref{data-types} capture this notion.
+Note that this is another deviation from \cite{orig},
+which only has to specify simple rules for the three built-in ADTs.
+As we allow general algebraic data types,
+these more intricate rules are necessary.
 
 \begin{figure}[t]
 \begin{gather*}
@@ -265,11 +291,14 @@ Function application is written by juxtaposition,
 it associates to the left and has highest binding precedence.
 The supported primitive operations are addition for natural numbers
 and equality checks for |Data| types, in particular natural numbers.
+Comparison for equality requires a certain structure on the values,
+thus the |Data| requirement.
+After all, checking whether two functions are equal is undecidable in general.
 As usual, the operator |+| binds more tightly than |==|.
 The former associates to the left and the latter is not associative.
 Parentheses can be used for structuring expressions.
 |failed| signifies that the computation does not yield a result.
-It can be used to \emph{cut off} unwanted computation branches.
+It can be used to \enquote{cut off} unwanted computation branches.
 Let bindings allow
 using the result of a computation more than once in an expression
 by binding it to a variable |x|.
@@ -278,13 +307,33 @@ The construct |let .. free| introduces logic variables,
 it is the only logic feature in the language.
 Case expressions examine the value of an expression,
 called the \emph{scrutinee}.
-The value is matched with one or more constructor patterns |C_i x_i_j|.
-The constructors |C_i| that are matched on must be pairwise different.
+The value is matched with the constructor patterns |C_i x_i_j|.
+The constructors |C_i| that are matched on must be pairwise different
+and there must be at least one constructor pattern.
 There may or may not be a catch-all variable pattern |x| at the end.
 It only matches if none of the constructors before did.
 
+We modified the \cumin{} syntax from \cite{orig} in the following points.
+It was already mentioned that we allow general ADTs.
+As a consequence,
+the syntax for constructors and case expressions has to be generalized, as well.
+Additionally, we lift the requirement
+that constructors have to be fully applied.
+Moreover, the type class context in function signatures
+is written differently.
+In the original paper, the type variables with a |Data| requirement
+where indicated by tagging the quantifier $\forall$ with a |*|.
+Another discrepancy are case expressions.
+While the original syntax expects one pattern for each constructor,
+we permit a catch-all variable pattern at the end
+and do not require every constructor to be matched.
+Furthermore, the primitive |anything<:tau:>| from \cite{orig}
+(corresponding to |let x :: tau free in x|)
+is removed in favor of the |let .. free| construct.
+Finally, the keyword |failure| is renamed to |failed|.
+
 Besides the mathematical notation,
-there is also a plain-text representation.
+there is also a plain-text representation of \cumin{} code.
 The straightforward correspondence is shown in \cref{cumin-plain}.
 \begin{figure}[t]
 \centering
@@ -346,6 +395,7 @@ to make programs easier to read and write.
 List literals can be written in the natural way |[e_1, .., e_n]<:tau:>|$\!\!\!$.
 This is desugared to the expression
 |Cons<:tau:> e_1 (.. (Cons<:tau:> e_n Nil<:tau:>) ..)|.
+\todo[inline]{more syntactic sugar}
 
 \subsection{Typing}
 
@@ -353,7 +403,13 @@ This is desugared to the expression
 For example, the term |True + 1| does not make sense,
 because the primitive operator |+| only accepts natural numbers as arguments.
 The typing rules are given in \cref{cumin-typing}.
-\begin{figure}
+They are based on \cite{orig}
+but take our modifications and generalizations of the language into account.
+Another deviation from the original paper,
+which is does not affect the syntax, can be seen, as well.
+While the original paper restricts equality checks to natural numbers,
+we allow general |Data| types.
+\begin{figure}[t]
 \begin{gather*}
 \AxiomC{|Gamma, x :: tau ||- x :: tau|}
 \DisplayProof
@@ -366,7 +422,7 @@ The typing rules are given in \cref{cumin-typing}.
 \quad
 \AxiomC{|Gamma ||- e_1 :: tau' -> tau|}
 \AxiomC{|Gamma ||- e_2 :: tau'|}
-\BinaryInfC{|Gamma || e_1 e_2 :: tau|}
+\BinaryInfC{|Gamma ||- e_1 e_2 :: tau|}
 \DisplayProof
 \\[1em]
 \AxiomC{|vec (Gamma ||- isData tau_i_j)|}
@@ -403,13 +459,13 @@ The typing rules are given in \cref{cumin-typing}.
 \AxiomC{|vec (Gamma, vec (x_i_j :: tau_i_j[vec (rho_m/alpha_m)]) ||- e_i :: tau|}
 \BinaryInfC{|Gamma ||- case e of { vec(C_i (vec x_i_j) -> e_i;) } :: tau|}
 \DisplayProof
-\quad\text{for every |data A (vec alpha_m) = vec (C_i (vec tau_i_j))|}
+\quad\text{for every |data A (vec alpha_m) = vec (C_k (vec tau_k_j))|}
 \\[1em]
 \AxiomC{\text{\dots (as above)}}
 \AxiomC{|Gamma, x :: A (vec rho_m) ||- e' :: tau|}
 \BinaryInfC{|Gamma ||- case e of { vec(C_i (vec x_i_j) -> e_i;) x -> e'; } :: tau|}
 \DisplayProof
-\quad\text{for every |data A (vec alpha_m) = vec (C_i (vec tau_i_j))|}
+\quad\text{for every |data A (vec alpha_m) = vec (C_k (vec tau_k_j))|}
 \end{gather*}
 \caption{Typing rules for \cumin{} expressions}
 \label{cumin-typing}
@@ -430,10 +486,14 @@ A \cumin{} program is well-typed if each of its functions is well-typed.
 
 As an example, consider the following program.
 > choose :: forall a. a -> a -> a
-> choose x y = let c :: Bool free in case c of { True -> x; False -> y }
+> choose x y = let c :: Bool free in case c of
+>   True -> x
+>   False -> y
 >
 > map :: forall a b. (a -> b) -> List a -> List b
-> map f xs = case xs of { Nil -> Nil<:b:>; Cons y ys -> Cons<:b:> (f<:a:> y) (map<:a,b:> f<:a:> ys) }
+> map f xs = case xs of
+>   Nil        -> Nil<:b:>
+>   Cons y ys  -> Cons<:b:> (f y) (map<:a,b:> f ys)
 
 To prove that |choose| is well-typed,
 consider the following deduction.
@@ -479,7 +539,7 @@ The missing subderivations look like this.
 
 \section{\salt{} syntax and typing}
 
-The syntax of \salt{} is quite similar to \cumin{}. (\cref{salt-exp})
+The syntax of \salt{} is quite similar to \cumin{} (\cref{salt-exp}).
 However, it replaces the |let .. free| construct
 with the keyword |unknown<:tau:>|,
 which represents the set of values of the type |tau|.
@@ -506,12 +566,24 @@ Hence, function definitions are simpler than in \cumin{}.
 > f :: forall (vec alpha_m). ((vec (Data alpha_i_j))) => tau
 > f = e
 
+The \salt{} syntax deviates slightly from \cite{orig}, as well.
+Except for the |let .. free| construct,
+the modifications of \cumin{} also apply to \salt{}.
+Additionally, the |anything| primitive from the original paper
+is renamed to |unknown|.
+Furthermore, the syntax for indexed unions is different.
+The original paper writes $|e_1| \ni |x| \bigcup |e_2|$
+for what we denote by |e_1 >>= \x :: tau -> e_2|.
+Our syntax is more liberal
+because we do not restrict ourselves to lambda abstractions
+on the right-hand side.
+
 \salt{} has the same plain text representation as \cumin{}.
 The additional symbols are written as shown in \cref{salt-plain}.
 Since \verb!Set! is a reserved type constructor,
 it cannot be the name of an ADT.
 
-\begin{figure}
+\begin{figure}[t]
 \centering
 \begin{tabular}{l l}
 Mathematical notation & plain text \\
@@ -549,14 +621,14 @@ It behaves the same but due to the nature of the translation,
 its functions contain more sets than necessary, for example,
 |choose| is translated to |choose :: Set (a -> Set (a -> Set a))|.
 
-The \salt{} typing rules are similar those of \cumin{}.
+The \salt{} typing rules are similar to those of \cumin{}.
 The ones for let bindings are now unnecessary.
 Instead, there are rules for lambda abstractions,
 and most importantly, for handling sets. (\cref{salt-typing})
-\begin{figure}
+\begin{figure}[t]
 \begin{gather*}
 \AxiomC{|Gamma, x :: tau' ||- e :: tau|}
-\UnaryInfC{|Gamma || (\x :: tau' -> e) :: tau' -> tau|}
+\UnaryInfC{|Gamma ||- (\x :: tau' -> e) :: tau' -> tau|}
 \DisplayProof
 \\[1em]
 \AxiomC{|Gamma ||- isData tau|}
@@ -586,15 +658,16 @@ if the following judgment is correct.
 Having specified the \salt{} syntax and typing rules,
 let us take a look at some examples.
 It is instructive to translate the \cumin{} programs above to \salt{}.
-> choose :: forall a. a -> a -> a
+> choose :: forall a. a -> a -> Set a
 > choose = \x :: a -> \y :: a -> unknown<:Bool:> >>= \c :: Bool ->
->   case c of { True -> set x; False -> set y }
+>   case c of
+>     True -> set x
+>     False -> set y
 >
 > map :: forall a b. (a -> b) -> List a -> List b
-> map = \f :: (a -> b) -> \xs :: List a -> case xs of {
->   Nil -> Nil<:b:>;
->   Cons y ys -> Cons<:b:> (f<:a:> y) (map<:a,b:> f<:a:> ys)
->   }
+> map = \f :: (a -> b) -> \xs :: List a -> case xs of
+>   Nil        -> Nil<:b:>
+>   Cons y ys  -> Cons<:b:> (f y) (map<:a,b:> f ys)
 Proving that |choose| is well-typed works similarly as above.
 Let |Gamma := a, x :: a, y :: a| and |Gamma' := Gamma, c :: Bool|.
 \begin{prooftree}
@@ -619,8 +692,11 @@ Instead let us understand the function |sMap|.
 This function applies |f| to every element of |xs|.
 As the only combinator for sets is the indexed union with |>>=|,
 |sMap| constructs the singleton set |set (f x)|
-for every element |x| of |xs| und forms the union of these sets,
+for every element |x| of |xs| and forms the union of these sets,
 yielding the set $\{ |(f x)| || |x| \in |xs| \}$, as desired.
+The relevant expression |xs >>= \x :: a -> set (f x)|
+is perhaps more suggestive when written in the notation of \cite{orig},
+namely as $|xs| \ni |x| \bigcup |set (f x)|$.
 To check type correctness, let |Gamma := a, b, f :: a -> b, xs :: Set a|.
 \begin{prooftree}
   \AxiomC{|Gamma ||- xs :: Set a|}
@@ -748,7 +824,7 @@ As soon as an inconsistency is found,
 a type error is reported.
 
 The only thing that deserves a special remark is inference of |Data| types.
-The inference of the |dataIdx A I| judgements is done once,
+The inference of the |dataIdx A I| judgments is done once,
 at the beginning of type checking and the result is stored.
 Closely following the typing rules
 to determine the index set $I$ of type variables

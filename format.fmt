@@ -4,7 +4,9 @@
 
 
 %format failed = "\mathbf{failed}"
+%format failure = "\mathbf{failure}"
 %format unknown = "\mathbf{unknown}"
+%format anything = "\mathbf{anything}"
 %format free = "\mathbf{free}"
 
 %format <: = "_{"
@@ -39,7 +41,7 @@
 
 %% Format Constructors:
 %subst conid a = "\mathsf{" a "}"
-
+%format I = "I"
 
 %format Gamma'
 
@@ -70,6 +72,7 @@
 %format tau_2n = tau "_{" 2 n "_{" 2 "}}"
 %format tau_i
 %format tau_i_j = tau "_{i_j}"
+%format tau_k_j = tau "_{k_j}"
 %format tau_m
 %format tau_m1 = tau "_{" m 1 "}"
 %format tau_mn = tau "_{" m n "_{" m "}}"
@@ -113,6 +116,7 @@
 %format C_2
 %format C_i
 %format C_m
+%format C_k
 
 %format Delta'
 %format Delta''
