@@ -624,7 +624,7 @@ its functions contain more sets than necessary, for example,
 The \salt{} typing rules are similar to those of \cumin{}.
 The ones for let bindings are now unnecessary.
 Instead, there are rules for lambda abstractions,
-and most importantly, for handling sets. (\cref{salt-typing})
+and most importantly, for handling sets (\cref{salt-typing}).
 \begin{figure}[t]
 \begin{gather*}
 \AxiomC{|Gamma, x :: tau' ||- e :: tau|}
@@ -728,7 +728,7 @@ They can be found an Github:
 The first one contains common functionality for both \cumin{} and \salt{},
 like the representation of types.
 The other two packages deal with the two languages specifically,
-providing a parser, type checker and pretty printer, respectively.
+each one providing a parser, pretty-printer and type checker.
 
 \subsection{Abstract syntax tree}
 
@@ -804,6 +804,21 @@ and such programs have to be rejected.
 Similarly, ADT names must be unique among each other
 and the same applies to constructor names.
 
+\subsection{Pretty-printer}
+
+Pretty-printing is in a way the opposite of parsing:
+It means transforming an AST into human-readable code.
+As for parsing, we use a combinator library for pretty-printing,
+called \texttt{ansi-wl-pprint}\footnote{
+\url{http://hackage.haskell.org/package/ansi-wl-pprint}}.
+It is based on \cite{pretty} but with some extensions.
+This particular library allows colored output,
+which makes syntax highlighting in the terminal possible.
+The pretty-printer is aware of operator precedence,
+so it only uses parentheses where necessary.
+It is used for automatically generated programs, debugging
+and in the translation program (see Chapter 4).
+
 \subsection{Type checker}
 
 The type checker is essentially a direct implementation of the typing rules.
@@ -857,19 +872,31 @@ When the maximum nesting level has been explored,
 there are no new constraints to be discovered.
 This procedure gives the same result as the formal typing rules
 because it requires no more than the necessary |Data| constraints.
-
-\subsection{Pretty-printing}
-
-Besides a parser and type checker,
-we also implemented a pretty-printer,
-which transforms an AST into human-readable code.
-As for parsing, we use a combinator library for pretty printing,
-called \texttt{ansi-wl-pprint}\footnote{
-\url{http://hackage.haskell.org/package/ansi-wl-pprint}}.
-It is based on \cite{pretty} but with some extensions.
-This particular library allows colored output,
-which makes syntax highlighting in the terminal possible.
-The pretty-printer is aware of operator precedence,
-so it only uses parentheses where necessary.
-It is used for automatically generated programs, debugging
-and in the REPL of the interpreter. (see Chapter 3)
+To illustrate the method, consider the following definitions.
+> data List a = Nil | Cons a (List a)
+> data Alt a b = End | Cont a (Alt b a)
+The second data type represents a list with alternating types.
+How does the fixpoint iteration proceed?
+At first, $I_{|List|} = \emptyset$ and $I_{|Alt|} = \emptyset$.
+In the first iteration,
+the index 1 for the type variable |a|
+is added to $I_{|List|}$ and $I_{|Alt|}$
+since |a| is a constructor argument type.
+The second constructor arguments of |Cons| and |Cont|
+do not produce new constraints
+since |List| and |Nat| have no |Data| requirements in the beginning, yet.
+After the first iteration, we thus have $I_{|List|} = I_{|Alt|} = \{1\}$.
+In the second iteration, the |List a| argument of |Cons|
+requires |a| to be a |Data| type
+because we now have $1 \in I_{|List|}$.
+So 1 (the index of |a|) is again added to $I_{|List|}$,
+leaving the set unchanged.
+Furthermore, the |Alt b a| argument of |Cont|
+requires |b| to be a |Data| type, as well,
+because $1 \in I_{|Alt|}$
+and |b| is used as the first type argument of |Alt|.
+As |b| is the second type parameter in the definition of |Alt|,
+the index 2 is added to $I_{|Alt|}$.
+The result $I_{|List|} = \{1\}, I_{|Alt|} = \{1,2\}$
+does not change in the next iteration,
+which means that it is the desired fixed point.
