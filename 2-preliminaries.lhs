@@ -755,9 +755,9 @@ yields |\y -> \x -> y|, which is incorrect
 as the variable |y| is not free anymore.
 For the correct solution |\y' -> \x -> y|, variables have to be renamed.
 There are more elaborate representations for capture avoidance,
-\eg deBruijn indices,
-but we opted against that complexity
-since the kind of substitution needed for our purposes,
+like the one I explain in Section 4.3.1,
+but we opted against that complexity in the common packages
+since the kind of substitution needed for type checking,
 namely instantiating type variables on function invocations,
 can never lead to unwanted capturing.
 This is because type variable bindings are always on the top level,

@@ -50,7 +50,7 @@ a \cumin{} expression |f| of type |(Nat -> Bool) -> Nat| will be translated to
 a \salt{} expression of type |Set ((Nat -> Set Bool) -> Set Nat)|.
 The reason for the outer |Set| is
 that the |f| itself may be nondeterministic,
-i.e. it might represent multiple functions;
+\ie it might represent multiple functions;
 for the |Set| in the argument
 that |f| may be given a nondeterministic function as an argument;
 and for the remaining |Set|
@@ -89,16 +89,16 @@ How \cumin{} expressions are translated can be seen in \cref{trans-exp}.
 &\qquad\text{for every |data A (vec alpha_m) = .. || C tau_1 .. tau_n || ..| in \cumin{}} \\*
 &\qquad\text{and where |tau'_i = tau_i[vec (rho_m/alpha_m)]|.} \\
 \trans{|failed<:tau:>!|} &= |set (failed<:tytrans tau:>!)| \\
-\trans{|unknown<:tau:>!|} &= |unknown<:tytrans tau:>| \\
+\trans{|let x :: tau free in e|} &= |unknown<:tytrans tau:>! >>= \x :: tytrans tau -> trans e| \\
 \trans{|f<:tau_1,..,tau_n:>!|} &= |f<:tytrans tau_1,..,tytrans tau_n:>| \\
 \trans{|let x = e_1 in e_2|} &= |trans e_1 >>= \x :: tau -> trans e_2| \\*
 &\qquad \text{where |trans e_1 :: Set tau|.} \\
-\trans{|f e|} &= |trans f >>= \f' :: tau_1 -> trans e >>= \e' :: tau_2 -> set (f' e')| \\*
+\trans{|f e|} &= |trans f >>= \f' :: tau_1 -> trans e >>= \e' :: tau_2 -> f' e'| \\*
 &\qquad \text{where |trans f :: Set tau_1|, |trans e :: Set tau_2| and |f', e'| are fresh variables.} \\
 \trans{|e_1 + e_2|} &= |trans e_1 >>= \x_1 :: Nat -> trans e_2 >>= \x_2 :: Nat -> set (x_1 + x_2)| \\*
 &\qquad \text{where |x_1| and |x_2| are fresh variables.} \\
-\trans{|e_1 == e_2|} &= |trans e_1 >>= \x_1 :: tau_1 -> trans e_2 >>= \x_2 :: tau_2 -> set (x_1 == x_2| \\*
-&\qquad \text{where |trans e_i :: Set tau_i| and |x_i| are fresh variables.} \\
+\trans{|e_1 == e_2|} &= |trans e_1 >>= \x_1 :: tau -> trans e_2 >>= \x_2 :: tau -> set (x_1 == x_2| \\*
+&\qquad \text{where |trans e_i :: Set tau| and |x_i| are fresh variables.} \\
 \trans{|case e of { p_1 -> e_1; .. }|} &= |trans e >>= \x :: tau -> case x of { p_1 -> trans e_1; .. }| \\*
 &\qquad \text{where |trans e :: Set tau| and |x| is a fresh variable.}
 \end{align*}
@@ -149,14 +149,14 @@ Some example translations can be seen below.\\[.5cm]
 \texths\small%
 \begin{code}
 id :: forall a. a -> a
-id a = a
+id x = x
 \end{code}
 \end{minipage}
 \begin{minipage}{.6\textwidth}%
 \texths\small%
 \begin{code}
 id :: forall a. Set (a -> Set a)
-id = { \a :: a -> { a } }
+id = { \x :: a -> { x } }
 \end{code}
 \end{minipage}
 \\[.5cm]
@@ -225,18 +225,18 @@ in each branch of a case expression.
 However, there is still some code being duplicated,
 which may increase program size considerably.
 To keep things simple, I did not explore that further.}
+Note that variable capture on substitution is an issue, as well.
+It is addressed in Section 4.3.
 
 Similarly to $\beta$-reduction,
 there is $\eta$-reduction:
 An expression of the form |\x -> f x| is equivalent to |f|
 if |x| does not occur freely in |f|.
 In contrast to $\beta$-reduction,
-this transformation is always safe and beneficial.\footnote{
-Note that this is not valid in the presence of |seq|.
-It can distinguish between |undefined| and |\x -> undefined x|.
-Such a primitive does not exist in \salt{}, however.
-So everything is fine.
-}
+this transformation is always safe and beneficial.
+Note that while $\eta$-reduction is not valid for \cumin{} (\cf Section 3.1),
+it is allowed in \salt{}
+because there is no nondeterminism or call-time choice.
 
 It was mentioned before
 that the set type constructor |Set| forms a monad,
@@ -308,7 +308,7 @@ In the example programs I looked at,
 the other direction was never beneficial.
 
 As a larger example,
-let us look at how the simplifications transforms the prelude function |length|.
+let us look at how the simplifications transform the prelude function |length|.
 The original version is on the left,
 the simplified one on the right.\\[0.5em]
 \begin{minipage}{.5\textwidth}%
@@ -361,6 +361,8 @@ and the chance for small improvements does not justify the large additional effo
 
 While the translation given in \cite{orig} is purely syntactical,
 the adapted version presented here requires type information.
+For example, let bindings do not have a type annotation
+but they are translated to lambda abstractions, which need one.
 As a consequence, one has to keep track of the types of bound variables
 while traversing the syntax tree.
 Another problem is fresh variables and capture avoidance
