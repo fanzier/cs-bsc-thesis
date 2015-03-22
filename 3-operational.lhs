@@ -67,16 +67,16 @@ are \emph{not} equivalent.
 This shows that $\eta$-equivalence
 does not in general hold for \cumin{} (and Curry).
 The difference between these two functions can only be observed
-when used as a higher order function argument:
-|map<:Nat,Nat:> maybeDouble1 [1,3]<:Nat:>!|
-will evaluate to |[1,3]<:Nat:>!| or |[2,6]<:Nat:>!|.
-This is because when map is called,
+when they are used as a higher order function argument:
+The expression |map<:Nat,Nat:> maybeDouble1 [1,3]<:Nat:>!|
+evaluates to |[1,3]<:Nat:>!| or |[2,6]<:Nat:>!|.
+This is because when |map| is called,
 |maybeDouble1| is chosen to be |id<:Nat:>!| or |double|
 due to call-time choice.
 This means that it will act the same way on each list element.
-On the other hand,
-|map<:Nat,Nat:> maybeDouble1 [1,3]<:Nat:>!|
-will evaluate to
+On the other hand, the expression
+|map<:Nat,Nat:> maybeDouble2 [1,3]<:Nat:>!|
+evaluates to
 |[1,3]<:Nat:>!|, |[1,6]<:Nat:>!|, |[2,3]<:Nat:>!| or |[2,6]<:Nat:>!|.
 The reason is
 that |maybeDouble2| is not \enquote{directly} nondeterministic,
@@ -90,7 +90,7 @@ we will have to keep track of variable assignments.
 \begin{definition}[Heap]
 A \emph{heap} is a mapping
 |[x_1 /-> e_1, .., x_n /-> e_n]|
-where the |x_i|'s are variables and
+where the |x_i| are variables and
 each |e_i| is either an expression or a special marker |free :: tau|,
 in which case |x_i| is called a \emph{logic variable} of type |tau|.
 Every variable that occurs in an expression |e_i|
@@ -107,11 +107,16 @@ that binds (at least) all the variables in the expression.
 \begin{definition}[Heap Expression Pair]
 A \emph{heap expression pair} |Delta : e| is
 a heap |Delta| together with an expression |e|
-such that every variable occurring in |e| is in |Delta|.
+such that every unbound variable occurring in |e| is in the heap |Delta|.
 \end{definition}
 
 The operational semantics will describe
 how such heap expression pairs are evaluated.
+In the most common case,
+we want to know the value of an expression |e|
+in the context of a certain \cumin{} program,
+without a given heap.
+In this case, we simply evaluate the heap expression pair |[] : e|.
 When talking about evaluation,
 one has to specify
 when an expression is called evaluated.
@@ -167,12 +172,8 @@ This is sometimes also called \enquote{forcing}.
 
 How can these normal forms be obtained?
 This is done using the rules shown in
-\cref{logical-eval,functional-eval,force-eval},
-The rationale behind them is explained in the next section.
-
-\vfill
-
-\begin{figure}[h!]
+\cref{logical-eval,functional-eval,force-eval}.
+\begin{figure}[b!]
 \hrulefill
 \begin{tabularx}{\textwidth}{r >{\setstretch{1.8}}X}
 {[Val]}
@@ -202,8 +203,8 @@ The rationale behind them is explained in the next section.
 &\AxiomC{|Delta : e[vec (tau_m/alpha_m),vec (y_n/x_n)] ~>* Delta' : v|}
 \UnaryInfC{|Delta : f <:vec tau_m:> (vec y_n) ~>* Delta' : v|}
 \DisplayProof
-\hfill for a top-level function
-|f ::forall alpha_1 ..  alpha_m . tau; f(vec x_n) = e|
+\newline for a top-level function
+|f ::forall (vec alpha_m) . (Data ..) => tau; f(vec x_n) = e|
 \\[1em]
 {[Flatten]}
 &\AxiomC{|Delta: let y = e in phi y ~>* Delta' : v|}
@@ -229,7 +230,7 @@ The rationale behind them is explained in the next section.
 \AxiomC{|Delta' : e_2 ~> Delta'' : n_2|}
 \BinaryInfC{|Delta : e_1 == e_2 ~>* Delta'' : b|}
 \DisplayProof
-\hfill where |n_1,n_2| are literals
+\newline where |n_1,n_2| are literals
 and |b| is |True| if |n_1=n_2|, |False| otherwise.
 \\[1em]
 {[Eq]}
@@ -244,7 +245,7 @@ and |b| is |True| if |n_1=n_2|, |False| otherwise.
 \AxiomC{|Delta' : e_2 ~> Delta'' : D<:vec (tau_m):> (vec y_n)|}
 \BinaryInfC{|Delta : e_1 == e_2 ~> Delta'' : False|}
 \DisplayProof
-\hfill where |C| and |D| are different constructors.
+\newline where |C| and |D| are different constructors.
 \\[1em]
 {[NEq]}
 &\AxiomC{|Delta : e_1 ~> Delta' : C<:vec (tau_m):> (vec x_n)|}
@@ -252,7 +253,7 @@ and |b| is |True| if |n_1=n_2|, |False| otherwise.
 \AxiomC{|vec (Delta<:i-1:> : x_i == y_i ~> Delta_i : b_i)|}
 \TrinaryInfC{|Delta : e_1 == e_2 ~> Delta_i : False|}
 \DisplayProof
-\hfill where $i \in \{1,\dots,n\}$
+\newline where $i \in \{1,\dots,n\}$
 and |b_j| is |True| for all $j \in \{1,\dots,i-1\}$
 but |b_i| is |False|.
 \\[1em]
@@ -267,13 +268,11 @@ but |b_i| is |False|.
 \AxiomC{|Delta'[x /-> C<:vec tau_m:> (vec x_n)] : e ~>* Delta'' : v|}
 \BinaryInfC{|Delta : case e of { ..; x -> e } ~>* Delta'' : v|}
 \DisplayProof
-\hfill only if none of the constructor patterns
-before the catch-all pattern |x| matched the constructor |C|.
+\newline only if none of the constructor patterns matched the constructor |C|.
 \end{tabularx}
 \caption{Rules for logical evaluation}
 \label{logical-eval}
 \end{figure}
-
 \begin{figure}[t]
 \begin{tabularx}{\textwidth}{r >{\setstretch{1.8}}X}
 {[FNF]}
@@ -292,14 +291,13 @@ before the catch-all pattern |x| matched the constructor |C|.
 &\AxiomC{|Delta: e ~>* Delta'[x /-> free :: A (vec rho_m)] : x|}
 \UnaryInfC{|Delta: e ~> Delta'[ vec (y_n /-> free :: tau_n[vec (rho_m/alpha_m)]), x /-> C<:vec rho_m:> (vec y_n)] : C<:vec rho_m:> (vec y_n)|} 
 \DisplayProof
-\hfill for any constructor |C| of the ADT |A| with argument types |tau_n|
+\newline for any constructor |C| of |A| with argument types |tau_n|
 and where |vec y_n| are fresh variables
 \end{tabularx}
 \caption{Rules for functional evaluation}
 \label{functional-eval}
 \hrulefill
 \end{figure}
-
 \begin{figure}[h]
 \begin{tabularx}{\textwidth}{r >{\setstretch{1.8}}X}
 {[RNF]}
@@ -315,17 +313,25 @@ and where |vec y_n| are fresh variables
 \AxiomC{|Delta_nm1 : y_n ~>! Delta_n : e_n|}
 \QuaternaryInfC{|Delta: e ~>! Delta_n : f<:vec rho_m:> (vec e_n)|}
 \DisplayProof
-\hfill where |f| is a constructor or top-level function
+\newline where |f| is a constructor or top-level function
 \end{tabularx}
 \caption{Rules for evaluation to reduced normal form}
 \label{force-eval}
 \hrulefill
 \end{figure}
+Like the typing rules,
+the evaluation rules are with respect to a given \cumin{} program.
+This is again omitted from the notation for the sake of readability.
+Another technicality to discuss is related to substitution:
+A variable is called \emph{fresh} if its name does not occur
+in the relevant expression or the \cumin{} program.
+Since we only ever substitute with fresh variables in the evaluation rules,
+variable capture (cf. Section 2.5.1) cannot happen.
 
 \section{Explanation of the Semantics}
 
-First note that the evaluation of an expression is not unique
--- that is what nondeterminism is about, after all.
+First note that the evaluation of an expression is not unique.
+That is what nondeterminism is about, after all.
 Some expressions can even evaluate to infinitely many values.
 A simple example for that would be
 \[
@@ -347,7 +353,7 @@ let us take a look at the individual rules of logical evaluation.
 \item \textbf{Val.}
 If an expression is already a value,
 it does not need to be evaluated further.
-\item Rules related to variables
+\item Rules related to variables:
   \begin{itemize}
   \item \textbf{Lookup.}
   Given a heap variable that is not a logic variable,
@@ -391,7 +397,7 @@ lazy evaluation and call-time choice.
   The argument of a function application is replaced
   by a fresh variable.
 
-  Note that this rule could be applied
+  Note that this rule can be applied
   even if all arguments are already variables.
   This unnecessary indirection is computationally undesirable
   but not forbidden according to this semantics.
@@ -742,7 +748,7 @@ Furthermore, there are (among others) the following evaluation functions.
 These functions accept a \cumin{} expression
 and produce a tree with all possible results at the leaves,
 flat normal forms and values, respectively.
-|EvalT| is a (state and reader) monad transformer
+|EvalT| is a monad transformer \cite{monad-transformers}
 that manages the state of the computation,
 namely the heap and a counter for generating fresh names,
 as well as an environment

@@ -769,7 +769,7 @@ Programs are given in the plain text format specified above.
 This textual representation needs to be parsed and converted to an AST.
 Instead of writing a parser by hand,
 we took the usual approach in the Haskell community
-and used a parser combinator library.
+and used a parser combinator library \cite{parser-combinators}.
 The most well-known one is \texttt{parsec}
 but we chose \texttt{trifecta}\footnote{
 \url{http://hackage.haskell.org/package/trifecta}}
@@ -822,7 +822,8 @@ and in the translation program (see Chapter 4).
 \subsection{Type checker}
 
 The type checker is essentially a direct implementation of the typing rules.
-It runs as a monadic computation to keep track of the type variables
+It runs as a monadic computation \cite{monads}
+to keep track of the type variables
 and bound variables that are in scope.\footnote{
 Monads can be used to thread a context through a computation,
 among other things.
