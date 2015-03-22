@@ -392,6 +392,36 @@ so it must have set type.
 The code also demonstrates some other differences from \cumin{}, such as
 mandatory lambda abstractions instead of function argument notation and
 missing |let| bindings.
-The syntax will be described in detail in the next chapter.
 
-\todo[inline]{Tell about rest of thesis!}
+\section{Overview and Goals of the Thesis}
+
+Why do we concern ourselves with all these languages?
+As said before, Haskell was discussed
+because it is the basis for all the other languages discussed.
+Curry is included in the introduction
+since it is one of the most well-known functional-logic languages.
+
+In the following, however,
+the thesis will be dealing with \cumin{} and \salt{}.
+These languages did not have an implementation before.
+There are two different kinds of semantics that can be implemented,
+namely a \emph{denotational} or an \emph{operational} semantics.
+The former gives a mathematical meaning to programs,
+the latter describes a program's execution more directly.
+As part of this thesis, I implemented an operational semantics (Chapter 3)
+for a variant of \cumin{} that is more general than in \cite{orig},
+for instance, it supports general algebraic data types.
+
+Furthermore, such \cumin{} programs can be translated to \salt{}.
+I implemented this translation, adapted from \cite{orig},
+and certain ways to simplify the generated \salt{} code (Chapter 4).
+It creates an interesting connection between the two languages,
+which is useful, for example, if one also has an interpreter for \salt{}.
+This was not a goal of the thesis, however.
+Instead, the translation and simplifications are a means of
+better understanding the nondeterminism in \cumin{}
+because it is made more explicit in \salt{}.
+How one can analyze the nondeterministic behavior of \cumin{} programs this way,
+is explained by way of examples in Chapter 5.
+But first, the languages \cumin{} and \salt{} have to be properly specified,
+which is the purpose of the next chapter.
