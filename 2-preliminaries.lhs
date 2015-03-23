@@ -284,7 +284,7 @@ As might be expected,
 the syntax includes variables and literals for natural numbers.
 Polymorphic functions and constructors
 have to be given type instantiations at the call site.
-In principle, these could be inferred automatically
+In principle, these could be inferred automatically,
 but this complicates type checking.
 For the sake of simplicity, these annotations are mandatory.
 Function application is written by juxtaposition,
