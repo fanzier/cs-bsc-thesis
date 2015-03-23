@@ -4,9 +4,7 @@
 
 
 %format failed = "\mathbf{failed}"
-%format failure = "\mathbf{failure}"
 %format unknown = "\mathbf{unknown}"
-%format anything = "\mathbf{anything}"
 %format free = "\mathbf{free}"
 
 %format <: = "_{"
