@@ -191,12 +191,14 @@ length xs = case xs of
 \texths\small%
 \begin{code}
 length :: forall a. Set (List a -> Set Nat)
-length = { \xs :: List a -> case xs of
-  Nil -> 0
-  Cons y ys -> { 1 } >>= \i :: Nat ->
-    length<:a:> >>= \length' :: (List a -> Set Nat) ->
-    { ys } >>= \ys'->
-    length' ys' >>= \l :: Nat -> { i + l } }
+length = {\xs :: List a -> {xs} >>=
+  \scrutinee :: List a -> case scrutinee of
+    Nil -> {0}
+    Cons y ys -> {1} >>= \one :: Nat ->
+      (length<:a:> >>= \len :: (List a -> Set Nat) ->
+      {ys} >>= \ys' :: List a -> len ys') >>=
+      \l :: Nat -> {one + l}
+  }
 \end{code}
 \end{minipage}
 \\[.5cm]
@@ -241,12 +243,18 @@ because there is no nondeterminism or call-time choice.
 It was mentioned before
 that the set type constructor |Set| forms a monad,
 in particular, it obeys the \emph{monad laws} listed below.
-The symbol |~=| denotes semantical equivalence.
 \begin{enumerate}
 \item |({ e } >>= f) ~= (f e)|
 \item |(e >>= \x -> { x }) ~= e|
-\item |(e >>= f >>= g) ~= (e >>= \x -> f x >>= g)|
+\item |(e >>= f) >>= g ~= e >>= (\x -> f x >>= g)|
 \end{enumerate}
+The symbol |~=| denotes \emph{semantic equivalence},
+which means that the evaluate to the same result,
+and is formally defined in \cite{orig}.
+For lack of space, I cannot develop this theoretical background,
+which is necessary to prove these laws.
+
+\todo[inline]{Use set notation to give more intuition}
 
 The first monad law, viewed as a transformation from left to right,
 is extremely useful
@@ -315,12 +323,14 @@ the simplified one on the right.\\[0.5em]
 \texths\small%
 \begin{code}
 length :: forall a. Set (List a -> Set Nat)
-length = { \xs :: List a -> case xs of
-  Nil -> 0
-  Cons y ys -> { 1 } >>= \i :: Nat ->
-    length<:a:> >>= \length' :: (List a -> Set Nat) ->
-    { ys } >>= \ys'->
-    length' ys' >>= \l :: Nat -> { i + l } }
+length = {\xs :: List a -> {xs} >>=
+  \scrutinee :: List a -> case scrutinee of
+    Nil -> {0}
+    Cons y ys -> {1} >>= \one :: Nat ->
+      (length<:a:> >>= \len :: (List a -> Set Nat) ->
+      {ys} >>= \ys' :: List a -> len ys') >>=
+      \l :: Nat -> {one + l}
+  }
 \end{code}
 \end{minipage}
 \begin{minipage}{.5\textwidth}%
@@ -336,26 +346,9 @@ length = { \xs :: List a -> case xs of
 \end{minipage}
 \\[.5cm]
 This is a considerable improvement.
-There is only one thing that could be done better.
-A smart compiler could recognize
-that the |length| function is in fact deterministic.
-It could thus generate the following code:
-\begin{code}
-length' :: forall a. List a -> Nat
-length' = \xs :: List a -> case xs of
-  Nil -> 0
-  Cons y ys -> 1 + length'<:a:> ys
-
-length :: forall a. Set (List a -> Set Nat)
-length = { \xs :: List a -> { length'<:a:> xs } }
-\end{code}
-How this transformation can be derived by hand
-is discussed in Section 5.4.
-However, it is not clear
-how a compiler might arrive at this solution
-and the complexity would be beyond the scope of a bachelor thesis.
-The current simplifications produce good results,
-and the chance for small improvements does not justify the large additional effort.
+There is only one thing that could be done better in a manual translation,
+by exploiting the fact that the function is in fact deterministic,
+which is discussed in Section 5.4 by means of the same example.
 
 \section{Implementation}
 
@@ -477,11 +470,11 @@ As an example,
 consider the following automatic translation of the |length| function.
 \begin{code}
 length :: forall a. Set (List a -> Set Nat)
-length = {\xxs81 :: List a -> case xxs81 of
+length = {\xxs86 :: List a -> case xxs86 of
     Nil -> {0}
-    Cons x82 xs83 -> length<:a:> >>= \arg84 :: (List a
-                                        -> Set Nat) -> arg84 xs83 >>=
-      \primOpArg85 :: Nat -> {1 + primOpArg85}}
+    Cons x87 xs88 -> length<:a:> >>= (\arg89 :: (List a
+                                         -> Set Nat) -> arg89 xs88 >>=
+      (\primOpArg90 :: Nat -> {1 + primOpArg90}))}
 \end{code}
 As can be seen, numbers are appended to variable names
 to make them unique.
