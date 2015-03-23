@@ -791,23 +791,23 @@ Apply the Fun rule first, whenever possible.
 If not, try the Apply rule.
 In case none of those worked,
 use the Flatten rule.
-This strategy always makes progress. (cf. Section 3.3)
+This strategy always makes progress (cf. Section 3.3).
 
 All in all, logical evaluation proceeds like this:
 It checks whether the expression is already a value,
-and if so, does nothing. (Val rule)
+and if so, does nothing (Val rule).
 Otherwise, depending on the shape of the expression,
 apply a suitable rule according to the details
 in the previous paragraph.
 Functional evaluation invokes logical evaluation first.
 If the result is already in flat normal form,
-nothing is to be done. (FNF rule)
+nothing is to be done (FNF rule).
 Otherwise, the result is a logic variable
 which results in a branching of the evaluation tree,
 one new branch for each applicable Guess rule.
 Evaluation to reduced normal form uses functional evaluation.
-If the result is in RNF, nothing is to be done. (RNF rule)
-Otherwise, the subexpressions are recursively forced. (Force rule)
+If the result is in RNF, nothing is to be done (RNF rule).
+Otherwise, the subexpressions are recursively forced (Force rule).
 
 One more thing to discuss is guessing natural numbers.
 One could simply generate them in a tree like this:
@@ -889,7 +889,7 @@ it was more than ten times faster.
 Such a |CTree| is converted to a |Tree| after construction,
 so that it can be traversed.
 
-I implemented four kinds of traversals:
+I implemented two kinds of traversals:
 breadth-first search and depth-first search,
 each with and without a depth limit.
 Each of them has advantages and drawbacks.
@@ -982,8 +982,11 @@ It provides a history of the previous inputs
 that can be selected using the up and down keys.
 
 The REPL can evaluate expressions functionally,
+when given the commands \verb!:e! or \verb!:eval!,
 printing the results together with the corresponding heap.
 By default, it evaluates expressions to reduced normal form.
+This can also be explicitly specified
+by the commands \verb!:f! or \verb!:force!.
 In this case, the heap is unnecessary,
 since there are no variables in reduced normal form.
 As can be seen, the expressions are type checked before evaluation
@@ -995,7 +998,8 @@ There are two parameters that the user can change,
 namely the search depth limit, which is infinity by default,
 and the search strategy, which is BFS by default.
 The values of the parameters can be viewed with \verb!:get!
-and they can be changed using \verb!:set!.
+and they can be changed using \verb!:set!,
+as is exemplified in the sample run above.
 
 \section{Assessment of Search Strategies}
 
