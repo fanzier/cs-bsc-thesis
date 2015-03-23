@@ -33,7 +33,7 @@ This shortcoming will be partly addressed in Section 4.2.
 
 Every \cumin{} expression of type |tau|
 is translated to a \salt{} expression of type |set (tytrans tau)|
-where |tytrans| inserts |Set| to the right of every |->|. (\cref{trans-types})
+where |tytrans| inserts |Set| to the right of every |->| arrow (\cref{trans-types}).
 \begin{figure}[t]
 \begin{align*}
 |tytrans Nat| &= |Nat| \\
@@ -80,7 +80,7 @@ and the translation to \salt{} will look the same.
 \subsection{Translating expressions}
 
 How \cumin{} expressions are translated can be seen in \cref{trans-exp}.
-|trans| denotes the conversion function.
+The conversion function is denoted by |trans|.
 \begin{figure}[t]
 \begin{align*}
 \trans{|x|} &= |set x| \qquad \text{where |x| is a variable} \\
@@ -124,6 +124,16 @@ Needless to say,
 this translation is rather naïve and not very efficient --
 it could simply be translated to |{1 + 1}|.
 We will address this problem later.
+
+Most of the rules in \cref{trans-exp} are taken from \cite{orig}
+with mostly small modifications
+because of the differences in syntax and generality of ADTs.
+However, the translation of constructors had to be generalized
+because they in our version of \cumin{},
+they are allowed to be partially applied.
+Therefore, they are translated similar to regular \cumin{} functions,
+which are discussed in the next section,
+namely by wrapping each \enquote{level} in singleton sets.
 
 \subsection{Translating function declarations}
 
@@ -352,6 +362,12 @@ which is discussed in Section 5.4 by means of the same example.
 
 \section{Implementation}
 
+The implementation is relatively close to the translation
+and simplification rules described above.
+The program recursively traverses the syntax tree and applies them.
+I will now explain some implementation details.
+An overview of the implementation is given afterwards.
+
 While the translation given in \cite{orig} is purely syntactical,
 the adapted version presented here requires type information.
 For example, let bindings do not have a type annotation
@@ -461,7 +477,7 @@ one should pass the option \verb!-s!.
 The switch \verb!--with-prelude! controls
 whether the prelude functions should be included in the output.
 Normally, the translated prelude functions need not be included,
-as they are provided by the alternative \salt{} prelude. (cf. Chapter 2.4)
+as they are provided by the alternative \salt{} prelude (cf. Chapter 2.4).
 Of course, \verb!--help! can be used to show a help text.
 
 \subsection{Example}
@@ -488,7 +504,9 @@ First, type checking \cumin{} and \salt{} programs
 is a very useful consistency check.
 After every simplification, it is checked that the type did not change.
 Additionally, after the whole translation,
-it is checked that the \salt{} functions have the right types.
+it is checked that the \salt{} functions have the right types,
+namely that a \cumin{} function of type |tau|
+is translated to a \salt{} function of type |Set (tytrans tau)|.
 This catches a large class of bugs.
 
 Testing is still necessary, of course.
