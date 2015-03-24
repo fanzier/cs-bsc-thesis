@@ -23,7 +23,7 @@ Curry is based on (a subset of) Haskell
 but integrates logic variables and nondeterministic search.
 This functional-logic language is well-known and actively researched
 and various implementations exist,
-such as PAKCS (Portland Aachen Kiel Curry System)
+such as PAKCS (Portland Aachen Kiel Curry System) \cite{pakcs}
 or KiCS2 (Kiel Curry System) \cite{kics2}.
 Hence, it makes sense to use it as an introduction to this paradigm.
 
