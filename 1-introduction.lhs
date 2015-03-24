@@ -21,8 +21,11 @@ The declarative programming language \emph{Curry} \cite{curry} aims
 to combine the most important features of both paradigms in one language.
 Curry is based on (a subset of) Haskell
 but integrates logic variables and nondeterministic search.
-This functional-logic language is well-known and actively researched,
-so it makes sense to use it as an introduction to this paradigm.
+This functional-logic language is well-known and actively researched
+and various implementations exist,
+such as PAKCS (Portland Aachen Kiel Curry System)
+or KiCS2 (Kiel Curry System) \cite{kics2}.
+Hence, it makes sense to use it as an introduction to this paradigm.
 
 Afterwards,
 I will describe the functional-logic language \cumin{} (Curry Minor),
@@ -36,11 +39,11 @@ where, in contrast to \cumin{}, nondeterminism is made explicit
 using an abstract set type.
 It behaves more like a functional language
 and makes it easier, for example,
-to derive free theorems%
-\footnote{theorems about a function
-that can be derived solely from its type signature},
+to derive \emph{free theorems} \cite{free-theorems},
 which was the original motivation
-to introduce these two languages in \cite{orig}.
+to introduce these two languages in \cite{orig}.\footnote{
+Free theorems are theorems about a function
+that can be derived solely from its type signature.}
 
 In the later sections of this chapter,
 I present an example-based overview of these languages.
@@ -274,11 +277,6 @@ To retrieve the last element of a list,
 |list =:= append init [e]|, \ie
 that appending |[e]| to some list |init| must yield the original list.
 When this constraint is satisfied, |e| is returned.
-As one might expect,
-a Curry interpreter will not blindly try every possible list for |init|
-until it finds the right one.
-Instead it uses a strategy called \emph{narrowing}
-that can be compared to Prolog's resolution.
 
 \section{\cumin{}}
 
@@ -403,24 +401,38 @@ since it is one of the most well-known functional-logic languages.
 
 In the following, however,
 the thesis will be dealing with \cumin{} and \salt{}.
-These languages did not have an implementation before.
-There are two different kinds of semantics that can be implemented,
+There are technical reasons for dealing with these two languages
+instead of Curry, given in \cite{orig}.
+\cumin{} is better suited for studying the semantics
+and \salt{} is a means of better understanding nondeterminism in \cumin{}.
+The two languages did not have an implementation before,
+so the first goal is to implement a semantics.
+There are two different kinds of semantics,
 namely a \emph{denotational} or an \emph{operational} semantics.
 The former gives a mathematical meaning to programs,
 the latter describes a program's execution more directly.
 As part of this thesis, I implemented an operational semantics (Chapter 3)
 for a variant of \cumin{} that is more general than in \cite{orig},
 for instance, it supports general algebraic data types.
+At the same time, Fabian Thorand developed an implementation of
+a denotational semantics for both \cumin{} and \salt{},
+as part of his bachelor thesis.
+This way, we were able to test
+whether the operational and denotational semantics
+are consistent with each other.
+Additionally, the authors of \cite{orig} claim that the semantics of \cumin{}
+capture the behavior of real Curry implementations,
+\ie Curry programs that can be expressed in \cumin{}
+should behave the same.
 
-Furthermore, such \cumin{} programs can be translated to \salt{}.
+Moreover, \cumin{} programs can be translated to \salt{}.
 I implemented this translation, adapted from \cite{orig},
-and certain ways to simplify the generated \salt{} code (Chapter 4).
-It creates an interesting connection between the two languages,
-which is useful, for example, if one also has an interpreter for \salt{}.
-This was not a goal of the thesis, however.
-Instead, the translation and simplifications are a means of
-better understanding the nondeterminism in \cumin{}
-because it is made more explicit in \salt{}.
+as well as certain ways to simplify the generated \salt{} code (Chapter 4).
+It creates an interesting connection between the two languages
+since Fabian Thorand implemented semantics for both of them.
+However, the main goal of the translation and simplifications is
+to better understand the nondeterminism in \cumin{}
+since it is made more explicit in \salt{}.
 How one can analyze the nondeterministic behavior of \cumin{} programs this way,
 is explained by way of examples in Chapter 5.
 But first, the languages \cumin{} and \salt{} have to be properly specified,
