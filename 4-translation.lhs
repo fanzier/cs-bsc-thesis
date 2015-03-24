@@ -11,7 +11,7 @@ In \salt{},
 every expression that may assume multiple values
 must have set type |Set|.
 
-\section{The translation rules}
+\section{The Translation Rules}
 
 The translation method below is an adaption of \cite{orig}.
 The version presented here is different
@@ -29,7 +29,7 @@ into a set-typed expressions
 even if it is deterministic.
 This shortcoming will be partly addressed in Section 4.2.
 
-\subsection{Translating types}
+\subsection{Translating Types}
 
 Every \cumin{} expression of type |tau|
 is translated to a \salt{} expression of type |set (tytrans tau)|
@@ -56,7 +56,7 @@ that |f| may be given a nondeterministic function as an argument;
 and for the remaining |Set|
 that |f| may compute more than one natural number.
 
-\subsection{Translating data declarations}
+\subsection{Translating Data Declarations}
 
 In the same way as types,
 we have to translate data type declarations.
@@ -77,7 +77,7 @@ Most of the time,
 the data declarations will contain no function types
 and the translation to \salt{} will look the same.
 
-\subsection{Translating expressions}
+\subsection{Translating Expressions}
 
 How \cumin{} expressions are translated can be seen in \cref{trans-exp}.
 The conversion function is denoted by |trans|.
@@ -135,7 +135,7 @@ Therefore, they are translated similar to regular \cumin{} functions,
 which are discussed in the next section,
 namely by wrapping each \enquote{level} in singleton sets.
 
-\subsection{Translating function declarations}
+\subsection{Translating Function Declarations}
 
 The final step in translating \cumin{} programs to \salt{} programs
 are function declarations.
@@ -213,7 +213,7 @@ length = {\xs :: List a -> {xs} >>=
 \end{minipage}
 \\[.5cm]
 
-\section{Improving the generated \salt{} code}
+\section{Improving the Generated \salt{} Code}
 
 As one can see in the example programs,
 the translated expressions are often unnecessarily set-typed,
@@ -393,7 +393,7 @@ where variables are not identified by names
 but by \enquote{how many levels up the syntax tree they were bound}.
 This is made precise below.
 
-\subsection{Nameless representation}
+\subsection{Nameless Representation}
 
 To handle bound variables, I used the \verb!bound! library\footnote{
 \url{http://hackage.haskell.org/package/bound}
@@ -440,7 +440,7 @@ The reason is that
 blunders like forgetting a binder lead to type errors in the Haskell code
 because the variable types do not match up.
 
-\subsection{General approach}
+\subsection{General Approach}
 
 I implemented  the translation method as a program called \verb!cumin2salt!.
 On execution, it is passed a \cumin{} program to translate,

@@ -248,7 +248,7 @@ we have |isData (Phantom (Nat -> Nat))|.
 \UnaryInfC{|Gamma ||- isData (Phantom tau)|}
 \end{prooftree}
 
-\section{\cumin{} syntax and typing}
+\section{\cumin{} Syntax and Typing}
 
 \subsection{Syntax}
 
@@ -537,7 +537,7 @@ The missing subderivations look like this.
 \BinaryInfC{|Gamma' ||- map<:a,b:> f ys :: List b|}
 \end{prooftree}
 
-\section{\salt{} syntax and typing}
+\section{\salt{} Syntax and Typing}
 
 The syntax of \salt{} is quite similar to \cumin{} (\cref{salt-exp}).
 However, it replaces the |let .. free| construct
@@ -730,7 +730,7 @@ like the representation of types.
 The other two packages deal with the two languages specifically,
 each one providing a parser, pretty-printer and type checker.
 
-\subsection{Abstract syntax tree}
+\subsection{Abstract Syntax Tree}
 
 The objects in \cumin{} and \salt{} are straightforwardly modeled
 as algebraic data types in Haskell.
@@ -819,7 +819,7 @@ so it only uses parentheses where necessary.
 It is used for automatically generated programs, debugging
 and in the translation program (see Chapter 4).
 
-\subsection{Type checker}
+\subsection{Type Checker}
 
 The type checker is essentially a direct implementation of the typing rules.
 It runs as a monadic computation \cite{monads}

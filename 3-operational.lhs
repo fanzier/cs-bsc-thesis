@@ -559,7 +559,7 @@ Its flat normal forms are |False| and |True|:
 \UnaryInfC{|[] : let x :: Bool free in x ~> [y /-> True] : True|}
 \end{prooftree}
 
-\subsection{The coin example}
+\subsection{The Coin Example}
 
 As a more complex instance, consider |coin|.
 As an abbreviation, let |Delta := [x' /-> 0, y' /-> 1]|
@@ -604,7 +604,7 @@ A completely analogous derivation
 that uses Guess$_|True|$ instead of Guess$_|False|$
 yields the other evaluation |[] : coin ~>* Delta[c' /-> True] : 1|.
 
-\subsection{Call-time choice}
+\subsection{Call-time Choice}
 
 In the introduction of this chapter,
 we discussed the examples |coin + coin| vs.\ |let c = coin in c + c|.
@@ -643,7 +643,7 @@ Again, this works for all $i = 0, 1$.
 But the two summands are not independent in this case.
 Hence, the only possible results are 0 and 2.
 
-\subsection{Reduced normal form}
+\subsection{Reduced Normal Form}
 
 So far, we have not dealt with |~>!|.
 For sake of completeness, we will analyze
@@ -850,7 +850,7 @@ independently of whether BFS or DFS is used:
 ]
 \end{center}
 
-\subsection{Trees and traversals}
+\subsection{Trees and Traversals}
 
 An evaluation tree is represented by the data type
 > data Tree a = Leaf a | Branches [Tree a]
@@ -1013,7 +1013,7 @@ implemented by Fabian Thorand in his bachelor thesis.
 The test expressions are also evaluated using this semantics,
 and it is checked whether the results match the operational one.
 
-\section{Assessment of Search Strategies}
+\section{Assessment of the Search Strategies}
 
 To examine the effect of different search strategies,
 I created a benchmark\footnote{
