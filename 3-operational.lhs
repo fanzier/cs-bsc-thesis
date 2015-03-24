@@ -1001,6 +1001,18 @@ The values of the parameters can be viewed with \verb!:get!
 and they can be changed using \verb!:set!,
 as is exemplified in the sample run above.
 
+\subsection{Testing}
+
+In order to verify the correctness of the interpreter,
+I created a test-suite, called \verb!cumin-test!, in the implementation.
+It performs two kinds of checks:
+First, it evaluates certain test expressions to reduced normal form,
+and compares them with the corresponding expected results.
+As a second check, I used a denotational semantics for \cumin{},
+implemented by Fabian Thorand in his bachelor thesis.
+The test expressions are also evaluated using this semantics,
+and it is checked whether the results match the operational one.
+
 \section{Assessment of Search Strategies}
 
 To examine the effect of different search strategies,
