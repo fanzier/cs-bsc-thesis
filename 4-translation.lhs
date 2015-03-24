@@ -482,15 +482,16 @@ Of course, \verb!--help! can be used to show a help text.
 
 \subsection{Example}
 
-As an example,
-consider the following automatic translation of the |length| function.
+As an example output,
+consider the following automatic translation of the |length| function,
+with simplifications enabled.
 \begin{code}
 length :: forall a. Set (List a -> Set Nat)
-length = {\xxs86 :: List a -> case xxs86 of
+length = {\xxs_56 :: List a -> case xxs_56 of
     Nil -> {0}
-    Cons x87 xs88 -> length<:a:> >>= (\arg89 :: (List a
-                                         -> Set Nat) -> arg89 xs88 >>=
-      (\primOpArg90 :: Nat -> {1 + primOpArg90}))}
+    Cons x_57 xs_58 -> length<:a:> >>= (\arg_59 :: (List a
+                                           -> Set Nat) -> arg_59 xs_58 >>=
+      (\primOpArg_60 :: Nat -> {1 + primOpArg_60}))}
 \end{code}
 As can be seen, numbers are appended to variable names
 to make them unique.
@@ -511,12 +512,61 @@ This catches a large class of bugs.
 
 Testing is still necessary, of course.
 The implementation of denotational semantics for \cumin{} and \salt{}
-by Fabian Thorand is his bachelor thesis provides a good way to do this.
+by Fabian Thorand provides a good way to do this.
 A \cumin{} expression in the context of some program
 must have the same semantics
 as the translated expression in context of the translated program.
-This procedure is executed for several test programs and expressions.
+To verify that, I created a test suite in the implementation,
+called \verb!trans-test!,
+which checks this equivalence for a number of test expressions,
+and both for the original and for the simplified \salt{} code.
 
 Together, type checking and testing using the denotational semantics
 strengthen the claim that the translation preserves the semantics
 and thus works as intended.
+
+\subsection{Simplifications and Performance}
+
+While the main reason for studying the translation to \salt{}
+and the simplifications is
+to analyze the non-determinism in a \cumin{} program (next chapter),
+it is still interesting
+to measure the effects of the simplifications
+on the performance of \salt{} programs.
+
+I created a benchmark\footnote{
+a separate executable in the implementation, called \verb!opt-bench!}
+using the same infrastructure as in Section 3.6.
+The setup was the following:
+I wrote a \cumin{} program with some expressions to benchmark,
+which was then translated to \salt{} using my implementation,
+both with and without simplifications.
+In each version, the test expressions were evaluated to reduced normal form,
+using the implementation of the semantics for \salt{} by Fabian Thorand.
+Only the first fully evaluated result was computed with BFS.
+The benchmarks were the following:
+adding two natural numbers in Peano representation;
+subtracting them;
+dividing them;
+computing the last element of a seven-element list with logic variables;
+and sorting a four-element list of Peano numbers by trying all permutations.
+The results are shown in \cref{perf-simpl}.
+\begin{figure}[t]
+\centering
+\begin{tabular}{l r r}
+Program & unoptimized & optimized \\
+\hline
+Peano addition & 23\,ms & 10\,ms \\
+Peano subtraction & 220\,ms & 180\,ms \\
+Peano division & 3.9\,ms & 0.9\,ms \\
+Last & 96\,ms & 47\,ms \\
+Permutation sort & 44\,ms & 15\,ms
+\end{tabular}
+\caption{Average running times for (un-)optimized \salt{} code}
+\label{perf-simpl}
+\hrulefill
+\end{figure}
+As expected, the simplifications speed up the execution of \salt{} programs
+significantly.
+In the case of Peano division, the optimized version is even four times as fast
+as the unoptimized one.
