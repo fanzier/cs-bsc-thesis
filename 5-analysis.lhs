@@ -475,7 +475,7 @@ Then one creates two new functions |f'| and |g'|
 that are mutually recursive.
 This works the same for three functions etc.
 
-\section{Limitations and Further Work}
+\section{Limitations and Related Work}
 
 While I have presented methods to analyze lots of functions,
 including recursive ones,
@@ -487,9 +487,10 @@ So this has to be decided at the call site.
 Inlining can often solve this problem,
 but in case of recursive functions,
 it does not help.
-There are other ways (not relying on syntactic transformations)
-to handle such situations
-for instance, a type and effect system can be used
+
+There are other ways to analyze nondeterminism
+that do not rely on syntactic transformations.
+For instance, a type and effect system can be used
 to track the nondeterminism in the program.
 Such an approach is described in \cite{nondetana}.
 
