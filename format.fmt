@@ -25,7 +25,7 @@
 %format .. = "\dots"
 %format (vec (a)) = "\overline{" a "}"
 
-
+%format not = "\Varid{not}"
 
 
 %format isContext (a) = a "\mbox{~context}"
