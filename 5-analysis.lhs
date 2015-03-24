@@ -24,19 +24,18 @@ As a trivial example, consider the translated identity function.
 > id :: forall a. Set (a -> Set a)
 > id = { \ x -> { x } }
 It is a singleton set containing a function returning a singleton set,
-so |id| is completely deterministic.
+so the original \cumin{} function |id| is completely deterministic.
 
-In general, deciding whether a function is deterministic is undecidable.
+In general, determining whether a function is deterministic is undecidable.
 This can be proved by reduction from the halting problem.\footnote{
 As \salt{} includes a simply-typed lambda calculus
 and allows unrestricted recursion, it is Turing complete.}
-Consider the following \salt{} expression:
+Consider the following \salt{} expression.
 > case condition of { True -> set True; False -> unknown<:Bool:>! }
 This is deterministic if and only if always the first branch is evaluated.
 However, we cannot decide whether |condition| is always |True|
 since it is even undecidable whether its evaluation terminates at all.
-So any method of detecting determinism must be conservative
-and will not be complete.
+So any method of detecting determinism will not be complete.
 However, one can usually go quite far with purely syntactic transformations,
 as I will describe below.
 
@@ -86,8 +85,7 @@ Similarly to the monad laws for sets, the following laws hold for |sMap|.
 \item |s >>= (sMap f . g) ~= sMap f (s >>= g)|
 \end{enumerate}
 The proofs employ the monad laws.
-\begin{enumerate}
-\item
+
 > sMap f { e }
 > ~= -- definition of |sMap|
 > { e } >>= set . f
@@ -95,7 +93,7 @@ The proofs employ the monad laws.
 > (set . f) e
 > ~= -- definition of |(.)| and |set|
 > { f e }
-\item
+
 > sMap f s >>= g
 > ~= -- definition of |sMap|
 > (s >>= set . f) >>= g
@@ -105,7 +103,7 @@ The proofs employ the monad laws.
 > s >>= \x -> g (f x)
 > ~= -- definition of |(.)|
 > s >>= (g . f)
-\item
+
 > s >>= (sMap f . g)
 > ~= -- definition of |(.)|
 > s >>= (\x -> sMap f (g x))
@@ -115,7 +113,6 @@ The proofs employ the monad laws.
 > (s >>= g) >>= (set . f)
 > ~= -- definition of |sMap|
 > sMap f (s >>= g)
-\end{enumerate}
 
 Another concept to discuss is \emph{strictness}.
 A \salt{} function |f :: tau' -> tau| is called strict
@@ -123,7 +120,7 @@ if |f failed<:tau':>! ~= failed<:tau:>!|.
 Intuitively, this means that |f| evaluates its argument,
 for example using a case expression.
 Some transformations in the following only work for strict functions.
-The functions |set|, |(.)|and |sMap f| are strict
+The functions |set|, |(f .)| and |sMap f| are strict
 if |f| is, according to the semantics from \cite{orig}.
 
 \section{Determinism}
@@ -210,7 +207,7 @@ that |guard<:Nat:> cond 1| is equivalent to a singleton set.
 > ~= -- assumption: |cond| is deterministic
 > guard<:Nat:> >>= \g -> { cond' } >>= \c -> g c >>= \g' -> g' 1
 > ~= -- first monad law, $\beta$-reduction
-> guard<:Nat:> >>= \g -> g >>= \g' -> g' cond' >>= \g' -> g' 1
+> guard<:Nat:> >>= \g -> g cond' >>= \g' -> g' 1
 > ~= -- inlining |guard|
 > {\cond -> {\x -> case cond of { True -> { x }; False -> { failed<:Nat:> } } } }
 >   >>= \g -> g cond' >>= \g' -> g' 1
@@ -229,6 +226,7 @@ As the next step, let us define determinism for functions.
 A \cumin{} expression |f :: tau_1 -> tau_2| is called \emph{deterministic}
 if there is a \salt{} function |f' :: tytrans tau_1 -> tytrans tau_2|
 such that |trans f ~= { set . f' }|.
+(Recall that |trans f :: Set (tau_1 -> Set tau_2)|.)
 Again, |f'| is called a \emph{witness}.
 Not only does this mean that |trans f| is a singleton set,
 but this also implies
@@ -262,18 +260,20 @@ Again, such an |f'| is called a \emph{witness}.
 
 Intuitively, this means that the set braces on the inner level of
 |trans f :: Set (tytrans tau_1 -> Set (tytrans tau_2))|
-are unnecessary,
-\ie |f| represents a set of functions returning singleton sets.
+are actually unnecessary,
+\ie |trans f| represents a set of functions returning singleton sets.
 The motivation for this definition in \cite{orig}
 is the derivation of free theorems,
 which requires the inner level of nondeterminism to be restricted.
 
 Operationally, one can think of multideterminism as follows.
 When applying |f| to a deterministic \cumin{} expression |e|,
-the Apply rule may be used to evaluate |f| to flat normal form.
-In this case, there may be more than one flat normal form
+|f| has to be in flat normal form at some point.
+The Apply rule may be used to achieve this.
+Since |f| is not required to be deterministic,
+there may be more than one flat normal form
 since |f| is represented by a set of functions in \salt{}.
-However, once a flat normal form is chosen,
+However, once a flat normal form is obtained,
 there must be at most one evaluation result for the function application.
 
 The definition and properties of |sMap| from above are useful
@@ -317,7 +317,8 @@ Inlining |id| and |double|, followed by simplifications with monad laws, yields:
 > unknown<:Bool:> >>= (sMap (set.) . (\c ->
 >   case c of { True -> { \x -> x }; False -> { \x -> x + x } }))
 > ~= -- since |s >>= (sMap f . g) ~= sMap f (s >>= g)|
-> sMap (set .) (unknown<:Bool:> >>= \c -> case c of { .. })
+> sMap (set .)
+>   (unknown<:Bool:> >>= \c -> case c of { True -> { \x -> x }; False -> { \x -> x + x } })
 For the case rule, we used that |sMap (set .)| is strict,
 which follows from the semantics in \cite{orig}.
 The witness |unknown<:Bool:> >>= \c -> case c of { .. }|
@@ -369,20 +370,20 @@ Under these circumstances, |f| can be defined like this.
 This transformation is known as \emph{fixed point fusion} \cite{fixpoint}.
 A proof of this rule for \salt{}
 would again rely on the semantics from \cite{orig}.
-To give some intuition, consider the following argument
+To give some intuition, consider the following argument.
 The definition of |f = g f| should be the \enquote{limit} of
-|g failed|, |g (g failed)|, |g (g (g failed))| etc.
+|g failed<:Set tau:>!|, |g (g failed<:Set tau:>!)|, |g (g (g failed<:Set tau:>!))| etc.
 If one knows that |g . h ~= h . g'|,
 one can reason as follows.
-> g (.. (g failed) ..)
+> g (.. (g failed<:Set tau:>!) ..)
 > ~= -- strictness of |h|
-> g (.. (g (h failed)) ..)
+> g (.. (g (h failed<:tau':>!)) ..)
 > ~= -- since |g . h ~= h . g'|
-> g (.. h (g' failed) ..)
+> g (.. h (g' failed<:tau':>!) ..)
 > ~= -- \dots iterating \dots
-> ~= h (g' (.. (g' failed) ..))
+> ~= h (g' (.. (g' failed<:tau':>!) ..))
 So |f| is equivalent to the \emph{limit} of
-|h (g' failed)|, |h (g' (g' failed))| etc.,
+|h (g' failed<:tau':>!)|, |h (g' (g' failed<:tau':>!))| etc.,
 which means it is equivalent to |f| defined as |f = h f'| where |f' = g' f'|.
 
 In the concrete example above, we can choose

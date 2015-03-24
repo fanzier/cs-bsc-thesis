@@ -1,7 +1,6 @@
 \chapter{Conclusion}
 
 In this thesis,
-I first gave a formal description of 
 I have explained and implemented an operational semantics for \cumin{}.
 The semantics helps to understand intricacies of \cumin{}'s evaluation,
 such as call-time choice.
@@ -12,7 +11,7 @@ and then traversing it with either breadth-first or depth-first search,
 optionally limited to a certain depth.
 In most cases, breadth-first search seems to be the best option
 since it is complete
-and performs better than depth-first search on many instances.
+and the performance is similar to depth-first search.
 
 Moreover, I have described and implemented
 a translation from \cumin{} to \salt{}.
@@ -22,7 +21,7 @@ Further simplifications are possible
 by making use of $\beta$- and $\eta$-reduction.
 I measured the performance difference between
 the optimized and unoptimized \salt{} code,
-and in most cases, the simplified code was significantly faster.
+and the simplified code was significantly faster.
 
 Finally, the translation was used
 to better understand the nondeterminism of \cumin{} programs.
