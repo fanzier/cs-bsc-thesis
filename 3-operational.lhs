@@ -1004,47 +1004,63 @@ as is exemplified in the sample run above.
 \section{Assessment of Search Strategies}
 
 To examine the effect of different search strategies,
-I created some test programs and measured the time
-to compute all values of certain nondeterministic expressions
+I created a benchmark\footnote{
+a separate executable in the implementation, called \verb!cumin-bench!}
+with some test programs and measured the time
+to evaluate certain nondeterministic expressions
+to reduced normal form
 using breadth-first search or depth-first search, respectively.
-The example programs were the following:
+The test expressions were the following:
 Subtracting two numbers in Peano representation
 using a free variable and addition;
-Dividing two Peano numbers using a free variable and multiplication;
-Multiplying two primitive |Nat| numbers;
-finding the last element of a list, as shown in the introduction;
-sorting a list by trying all permutations.
-The results are shown in \cref{perf-bfs-dfs}.
+dividing two Peano numbers using a free variable and multiplication;
+finding the last element of a 20-element list of boolean values,
+as shown in the introduction;
+sorting a four-element list of Peano numbers by trying all permutations;
+subtracting two primitive natural numbers using a logic variable and addition;
+and multiplying two primitive natural numbers $m,n$
+in terms of subtraction: $mn = n + (m-1)n$.
+For the last two test cases, evaluation was stopped
+as soon as the first solution was found.
+In the other cases, the evaluation tree had to be searched exhaustively.
 
+To determine the execution times (wall-clock time),
+the benchmarking library \verb!criterion!\footnote{
+\url{http://http://hackage.haskell.org/package/criterion}}
+was used.
+By running the benchmarks many times,
+it can accurately measure even very short running times.
+The program was compiled by GHC 7.8.3 with optimizations enabled (\verb!-O2!).
+The results are shown in \cref{perf-bfs-dfs}.
 \begin{figure}[t]
 \centering
-\begin{tabular}{l l l}
-Program & BFS & DFS \\
+\begin{tabular}{l l l l}
+Program & All results computed? & DFS & BFS \\
 \hline
-Peano subtraction & 1.2 s & 1.3 s \\
-Peano division & 11.1 s & 11.2 s \\
-Last & 0.9 s & 1.0 s \\
-Permutation sort & 0.50 s & 0.55 s \\
+Peano subtraction & all results & 78\,ms & 72\,ms \\
+Peano division & all results & 110\,ms & 110\,ms \\
+Last & all results & 2.3\,ms & 2.2\,ms \\
+Permutation sort & all results & 3.9\,ms s & 4.0\,ms \\
+\hline
+|Nat| subtraction & only the first one & 38\,ms & 39\,ms \\
+|Nat| multiplication & only the first one & 0.28\,ms & 58\,ms
 \end{tabular}
-\caption{Running times with different search strategies}
+\caption{Average running times with different search strategies}
 \label{perf-bfs-dfs}
 \hrulefill
 \end{figure}
 
-As one can see, in all the test cases,
-BFS is a little faster than DFS.
-However, when only the first solution is required,
-and the branching factor is high,
-DFS can be faster.
-An example would be multiplying primitive natural numbers.
-Since there is no primitive multiplication,
-it has to be implemented in terms of subtraction ($mn = n + (m-1)n$),
-and subtraction requires search.
-The result of $6 \times 6$ was computed instantly by DFS
-and took seconds to compute using BFS.
+As one can see, in most test cases,
+DFS and BFS take approximately the same time.
+However, in the last case, DFS is significantly faster.
+The reason for that is that the only successful \enquote{leaf}
+in the computation tree is at a certain place
+which is explored much earlier by DFS than by BFS.
+However, in other scenarios, the situation may be reversed
+since DFS can \enquote{get stuck} in a branch that does not yield a solution.
 
-BFS has the disadvantage of worse space complexity than DFS.
+BFS has the theoretical disadvantage of worse space complexity than DFS.
 But in the examples I tested, this did not seem to be a problem.
 On the other hand, it has the advantage of
-finding all solutions even in infinitely deep trees,
-so it is preferable as a default search strategy.
+finding all solutions even in infinitely deep trees.
+Hence it seems to be preferable as a default search strategy.
