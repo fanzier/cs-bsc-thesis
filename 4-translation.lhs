@@ -253,18 +253,18 @@ because there is no nondeterminism or call-time choice.
 It was mentioned before
 that the set type constructor |Set| forms a monad,
 in particular, it obeys the \emph{monad laws} listed below.
+To give some intuition, I also state the laws using set notation.
 \begin{enumerate}
-\item |({ e } >>= f) ~= (f e)|
-\item |(e >>= \x -> { x }) ~= e|
-\item |(e >>= f) >>= g ~= e >>= (\x -> f x >>= g)|
+\item |({ e } >>= f) ~= (f e)| or, in set notation $\bigcup_{|x| \in |{e}|} |(f x)| \cong |(f e)|$
+\item |(e >>= \x -> { x }) ~= e| or, in set notation $\bigcup_{|x| \in |e|} |{x}| \cong |e|$
+\item |(e >>= f) >>= g ~= e >>= (\x -> f x >>= g)| or
+  $\bigcup_{|y| \in \left(\bigcup_{|x| \in |e|} |(f x)|\right)} |(g y)| \cong \bigcup_{|x| \in |e|} \left(\bigcup_{|y| \in |(f x)|} |(g y)|\right)$
 \end{enumerate}
 The symbol |~=| denotes \emph{semantic equivalence},
 which means that the evaluate to the same result,
 and is formally defined in \cite{orig}.
 For lack of space, I cannot develop this theoretical background,
 which is necessary to prove these laws.
-
-\todo[inline]{Use set notation to give more intuition}
 
 The first monad law, viewed as a transformation from left to right,
 is extremely useful
