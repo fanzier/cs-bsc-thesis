@@ -21,20 +21,19 @@ The declarative programming language \emph{Curry} \cite{curry} aims
 to combine the most important features of both paradigms in one language.
 Curry is based on (a subset of) Haskell
 but integrates logic variables and nondeterministic search.
-This functional-logic language is well-known and actively researched
-and various implementations exist,
+This functional-logic language is well-known, actively researched
+and has various implementations,
 such as PAKCS (Portland Aachen Kiel Curry System) \cite{pakcs}
 or KiCS2 (Kiel Curry System) \cite{kics2}.
-Hence, it makes sense to use it as an introduction to this paradigm.
+Therefore, it makes sense to use it as an introduction to this paradigm.
 
-Afterwards,
-I will describe the functional-logic language \cumin{} (Curry Minor),
+I will then describe the languages \cumin{} (Curry Minor)
 and \salt{} (Set and Lambda Terms),
 both of which were introduced in \cite{orig}.
-\cumin{} is a sublanguage of Curry including its characteristic features
+The former is a sublanguage of Curry including its characteristic features
 but with fewer syntactic constructs,
 which simplifies the study of the language.
-\salt{} is essentially a lambda-calculus
+The latter is essentially a lambda-calculus
 where, in contrast to \cumin{}, nondeterminism is made explicit
 using an abstract set type.
 It behaves more like a functional language
@@ -50,7 +49,7 @@ I present an example-based overview of these languages.
 A more formal description can be found in chapter 2.
 But first, let me give a brief introduction to Haskell,
 for one thing because it is the language that Curry is built upon,
-for another thing because the implementation part of this thesis
+and for another because the implementation part of this thesis
 was carried out in Haskell.
 
 \section{Haskell}
@@ -63,10 +62,10 @@ in that they always produce the same output for the same input,
 and side-effects are restricted.
 Every expression is typed and the type checker ensures
 that the types match up,
-thus catching possible bugs at compile time.
+thus catching potential bugs at compile time.
 Evaluation of terms is delayed by default
 until the value is needed,
-which for example allows the use of infinite data structures.
+which allows for example the use of infinite data structures.
 
 \subsection{Functions}
 
@@ -103,22 +102,22 @@ In this case, they are called \emph{higher order functions}.
 An example is the following.
 > applyTwice :: (Int -> Int) -> Int -> Int
 > applyTwice f x = f (f x)
-Applying this function to |double| results in
-> quadruple :: Int -> Int
-> quadruple = applyTwice double
+Applying this function to |double| results in a new function
 which applies |double| to its argument twice,
 \ie multiplies its argument by four.
+> quadruple :: Int -> Int
+> quadruple = applyTwice double
 
 \subsection{Polymorphism}
 
 Actually, it is not necessary for |applyTwice|
 to have its type specialized to |Int|.
 It should work for any type.
-Indeed, Haskell allows us to write
+Indeed, Haskell allows us to write the following more general definition.
 > applyTwice :: (a -> a) -> a -> a
 Here, |a| is a type variable and can be instantiated with any type.
 For example, when using this function with |double|,
-|a| will be instantiated to type |Int|
+|a| will be instantiated to the type |Int|
 in order to match the type of |double|.
 
 Polymorphic functions are very common in Haskell.
@@ -128,16 +127,14 @@ Another simple example is the identity function.
 As a matter of fact,
 it is essentially the only function with this type signature.
 (This is a consequence of the free theorem for |id|.)
-
 Another very common example is function composition.
 > (.) :: (b -> c) -> (a -> b) -> a -> c
 > (.) f g x = f (g x)
-|(.)| is a higher-order function
+Here, |(.)| is a higher-order function
 that composes its two function arguments.
 It can also be written as an infix operator: |f . g| stands for |(.) f g|.
-Hence, one can write
+Hence, one can write |applyTwice| by composing the given function with itself.
 > applyTwice f = f . f
-because |applyTwice| simply composes the given function with itself.
 
 \subsection{Algebraic Data Types}
 
@@ -155,12 +152,12 @@ The first data type has two nullary constructors,
 These constitute its only values.
 The second data type specifies a binary tree
 whose leafs are annotated with an integer.
-Its values include for instance |Leaf 0|
+Its values include, for instance, |Leaf 0|
 or |Node (Leaf 10) (Node (Leaf 7) (Leaf 2))|.
 
 Data types can also be polymorphic.
 To this end, type variables can be added after the name of the ADT
-and the types on the right-hand side can use them. Example:
+and the types on the right-hand side can use them.
 > data Tree a = Leaf a | Node (Tree a) (Tree a)
 Using this definition, |Tree Int| is equivalent to |IntTree| from above.
 Singly-linked lists are also represented as ADTs:
@@ -171,7 +168,7 @@ As an example, the list 1,2,3 is represented
 by |Cons 1 (Cons 2 (Cons 3 Nil)) :: List Int|.
 In Haskell,
 there is special syntax for lists:
-|List a| is written |[a]|, |Nil| is |[]| and |Cons x xs| is |x:xs|.
+|List a| is written |[a]|, |Nil| means |[]| and |Cons x xs| corresponds to |x:xs|.
 
 \subsection{Pattern Matching}
 
@@ -180,12 +177,12 @@ How can one find out which constructor a value was built with
 and what its arguments are?
 This is done by pattern matching.
 In the simplest form,
-this is achieved with a |case| expression:
+this is achieved with a |case| expression.
 > map :: (a -> b) -> List a -> List b
 > map f list = case list of
 >   Nil          -> Nil
 >   Cons x rest  -> Cons (f x) (map f rest)
-|map| applies a function to every element of a list.
+The function |map| applies a function to every element of a list.
 It inspects the list by |case| splitting over its value.
 If it is the empty list |Nil|,
 the result is also |Nil|.
@@ -214,11 +211,11 @@ Consider the following program.
 > take 0 _            = Nil
 > take n (Cons x xs)  = Cons x (take (n - 1) xs)
 It defines |zeros|, an infinite list of zeros,
-and |take|, a function returning the first elements of a list.
-For instance,
+and |take|, a function returning the first elements of a list,
+which can be used like this.
 > take 2 (Cons 1 (Cons 2 (Cons 3 Nil))) == Cons 1 (Cons 2 Nil)
-But also |take 2 zeros| terminates in finite time
-and works as expected because of lazy evaluation
+But even an expression like |take 2 zeros| terminates in finite time
+and works as desired because of lazy evaluation.
 > take 2 zeros
 > == take 2 (Cons 0 zeros)
 > == Cons 0 (take 1 zeros)
@@ -254,14 +251,14 @@ instead of the custom data type from above with |Nil| and |Cons|.)
 To insert an object at any place in a list,
 |insert| puts it at the beginning
 or recursively inserts it later in the list.
-|insert 0 [3,4]| results in |[0,3,4]|, |[3,0,4]| or |[3,4,0]|.
-|permute| uses this function to insert the first element
+The function call |insert 0 [3,4]| results in |[0,3,4]|, |[3,0,4]| or |[3,4,0]|.
+Moreover, |permute| uses this function to insert the first element
 in the recursively permuted rest.
 Thus it nondeterministically computes all permutations of a list.
 
 Another new feature Curry offers are logic variables.
-It is a variable that is not assigned a value
-but instead is declared with the keyword |free|.
+These are variables that are not assigned a value
+but instead are declared with the keyword |free|.
 The interpreter then searches for suitable assignments
 that satisfy the given constraints.
 
@@ -293,10 +290,12 @@ like this.
 >   case choice of
 >     False -> x
 >     True -> y
-The logic variable |choice| nondeterministically assumes all boolean values,
-and as a consequence,
-the function nondeterministically returns either of its arguments.
-Some further examples of \cumin{} function are listed below.
+The |let .. free| binding introduces a logic variable |choice|
+that nondeterministically assumes all boolean values.
+As a consequence,
+both case alternatives can be evaluated
+the function can nondeterministically return either of its arguments.
+The following \cumin{} functions correspond to the Curry functions from above.
 
 > insert :: forall a. a -> List a -> List a
 > insert x list = case list of
@@ -327,8 +326,8 @@ Some further examples of \cumin{} function are listed below.
 The syntax, in particular the type signatures,
 will be explained in detail later.
 Notable differences to Curry include
-mandatory type signatures,
 explicit type variable instantiation for polymorphic functions,
+mandatory type signatures,
 and pattern matching exclusively with |case| expressions.
 
 \section{\salt{}}
@@ -348,8 +347,8 @@ namely |>>=|, pronounced \enquote{bind}.
 It represents an indexed union.
 More precisely,
 |e >>= f| where |e :: Set tau| and |f :: tau -> Set tau'|,
-for some |tau, tau'|,
-represents $\bigcup_{x \in |e|} |(f x)|$.
+for some types |tau, tau'|,
+represents the set $\bigcup_{x \in |e|} |(f x)|$.
 This can be used to the same effect as |let .. free| bindings in \cumin{},
 as the following translation of the |choose| function demonstrates.
 
@@ -395,14 +394,15 @@ missing |let| bindings.
 
 Why do we concern ourselves with all these languages?
 As said before, Haskell was discussed
-because it is the basis for all the other languages discussed.
+because it is the basis for all the other languages
+we are concerned with.
 Curry is included in the introduction
 since it is one of the most well-known functional-logic languages.
 
 In the following, however,
 the thesis will be dealing with \cumin{} and \salt{}.
-There are technical reasons for dealing with these two languages
-instead of Curry, given in \cite{orig}.
+There are technical reasons for restricting ourselves to these two languages
+instead of Curry, which are given in \cite{orig}.
 \cumin{} is better suited for studying the semantics
 and \salt{} is a means of better understanding nondeterminism in \cumin{}.
 The two languages did not have an implementation before,
@@ -421,9 +421,10 @@ This way, we were able to test
 whether the operational and denotational semantics
 are consistent with each other.
 Additionally, the authors of \cite{orig} claim that the semantics of \cumin{}
-capture the behavior of real Curry implementations,
+captures the behavior of real Curry implementations,
 \ie Curry programs that can be expressed in \cumin{}
 should behave the same.
+%TODO: maybe change last sentence?
 
 Moreover, \cumin{} programs can be translated to \salt{}.
 I implemented this translation, adapted from \cite{orig},
@@ -433,7 +434,7 @@ since Fabian Thorand implemented semantics for both of them.
 However, the main goal of the translation and simplifications is
 to better understand the nondeterminism in \cumin{}
 since it is made more explicit in \salt{}.
-How one can analyze the nondeterministic behavior of \cumin{} programs this way,
+How one can analyze the nondeterministic behavior of programs this way,
 is explained by way of examples in chapter 5.
 But first, the languages \cumin{} and \salt{} have to be properly specified,
 which is the purpose of the next chapter.

@@ -117,17 +117,18 @@ Functional-logic languages like Curry aim
 to combine the strengths of both functional and logic languages.
 In order to establish free theorems for such languages,
 the authors of \cite{orig} have focused their attention
-on a language fragment they call \emph{\cumin{}},
+on a sublanguage they call \emph{\cumin{}},
 which can be translated to another language called \emph{\salt{}}
-that makes logic features like nondeterminism more explicit.
+where logic features like nondeterminism are more explicit.
 
 In this thesis, I will give a detailed exposition of the two languages.
 Moreover, I will document
 the implementation of an operational semantics for \cumin{}
-and of a translation algorithm to \salt{} programs.
+and of a translation algorithm
+that transforms \cumin{} programs to equivalent \salt{} programs.
 I will describe how the generated \salt{} code can be simplified
 and how it can be used to analyze
-the use of nondeterminism in the original \cumin{} programs.
+the nondeterminism in the original \cumin{} program.
 
 \tableofcontents
 
