@@ -19,8 +19,8 @@ instead of translating it to mathematical objects.
 An operational semantics for (a subset of) Curry can be found in \cite{bh},
 which is a modification of \cite{ahhov}.
 Based on this,
-Stefan Mehner describes such a semantics
-for the variant of \cumin{} without algebraic data types from \cite{orig}.
+Stefan Mehner describes such a semantics \cite{cuminreport}
+for the variant of \cumin{} without general algebraic data types from \cite{orig}.
 A few small changes and generalizations lead to the semantics
 I describe below.
 Before that, I want to point out some properties of \cumin{}
@@ -240,13 +240,6 @@ and |b| is |True| if |n_1=n_2|, |False| otherwise.
 \TrinaryInfC{|Delta : e_1 == e_2 ~> Delta_n : True|}
 \DisplayProof
 \\[1em]
-{[NEqCon]}
-&\AxiomC{|Delta : e_1 ~> Delta' : C<:vec (tau_m):> (vec x_n)|}
-\AxiomC{|Delta' : e_2 ~> Delta'' : D<:vec (tau_m):> (vec y_n)|}
-\BinaryInfC{|Delta : e_1 == e_2 ~> Delta'' : False|}
-\DisplayProof
-\newline where |C| and |D| are different constructors.
-\\[1em]
 {[NEq]}
 &\AxiomC{|Delta : e_1 ~> Delta' : C<:vec (tau_m):> (vec x_n)|}
 \AxiomC{|Delta' : e_2 ~> Delta_0 : C<:vec (tau_m):> (vec y_n)|}
@@ -256,6 +249,13 @@ and |b| is |True| if |n_1=n_2|, |False| otherwise.
 \newline where $i \in \{1,\dots,n\}$
 and |b_j| is |True| for all $j \in \{1,\dots,i-1\}$
 but |b_i| is |False|.
+\\[1em]
+{[NEqCon]}
+&\AxiomC{|Delta : e_1 ~> Delta' : C<:vec (tau_m):> (vec x_n)|}
+\AxiomC{|Delta' : e_2 ~> Delta'' : D<:vec (tau_m):> (vec y_n)|}
+\BinaryInfC{|Delta : e_1 == e_2 ~> Delta'' : False|}
+\DisplayProof
+\newline where |C| and |D| are different constructors.
 \\[1em]
 {[CaseCon]}
 &\AxiomC{|Delta : e ~> Delta' : C<:vec tau_m:> (vec y_n)|}
@@ -374,7 +374,7 @@ it does not need to be evaluated further.
   Note that the evaluation of the bound expression is deferred
   until it is needed (Lookup).
   This is \emph{lazy evaluation}.
-  \item \textbf{LetFree.}
+  \item \textbf{Free.}
   Evaluating |let .. free| bindings work completely analogously.
   \end{itemize}
 \item \textbf{Function application.}
@@ -402,7 +402,7 @@ lazy evaluation and call-time choice.
   This unnecessary indirection is computationally undesirable
   but not forbidden according to this semantics.
   However, it is avoided in the implementation.
-  \item \textbf{App.}
+  \item \textbf{Apply.}
   The last rule for function application can always be applied.
   (However, it is only useful if the other rules don't make progress.)
   If the function is not already a top level function or constructor,
@@ -436,7 +436,7 @@ How evaluation continues depends on the result.
   and each of their arguments are equal,
   which is checked recursively.
   \item \textbf{NEq.}
-  If the constructors match
+  If the constructors match,
   but some of their arguments are not equal,
   then evaluation stops at the first pair of arguments to differ.
   The remaining arguments are \emph{not} evaluated.
@@ -511,8 +511,24 @@ there is nothing to be done.
 If the flat normal form of an expression
 is a constructor or function application,
 force all its arguments to reduced normal form.
-The result is in reduced normal form.
+Then the result is in reduced normal form as well.
 \end{itemize}
+
+The operational semantics given above differs from \cite{cuminreport}
+in that it supports general algebraic data types (not only lists and booleans),
+case expressions with catch-all variable patterns,
+and equality tests for arbitrary |Data| types, not only natural numbers.
+Although it is based on \cite{ahhov} and \cite{bh},
+these sources do not discriminate between functional and logic evaluation.
+Moreover, they require the input programs to be in a certain normalized form
+before they can be evaluated:
+Nested constructor and function invocations have to be eliminated.
+In the semantics given here, this normalization happens during evaluation,
+by means of the Flatten rule.
+The evaluation to reduced normal form is not explicitly described
+in these sources,
+but it is relatively straightforward
+and makes the implementation of the semantics much more convenient to use.
 
 \section{Examples}
 
@@ -856,10 +872,11 @@ An evaluation tree is represented by the data type
 > data Tree a = Leaf a | Branches [Tree a]
 It can be made a monad\footnote{
 In fact, this type constructor represents
-the free monad over the list functor.}
-where |return| creates a leaf
+the free monad over the list functor.},
+\ie there are two functions |return :: a -> Tree a|
+and |(>>=) :: Tree a -> (a -> Tree b) -> Tree b|,
+where the former simply creates a leaf
 and the bind operation |>>=| performs substitution on the leaves.
-\todo{Discuss monads before?}
 The operation that is important for nondeterminism is given by the function
 > branch :: [a] -> Tree a
 > branch = Branches . map Leaf
@@ -867,12 +884,40 @@ which creates a tree with the given leaves.
 Failure is represented by a tree without leaves:
 > failure :: Tree a
 > failure = branch []
+To better understand how these functions work,
+consider the following code sample.
+> branch [0,10] >>= \x -> branch [1,2,3] >>= \y -> return (x + y)
+There is special notation for |>>=| in Haskell,
+which allows it to be rewritten like this.
+> do  x <- branch [0,10]
+>     y <- branch [1,2,3]
+>     return (x + y)
+The code produces the tree visualized below.
+As the example demonstrates,
+|branch| produces the nondeterminism,
+and the monadic structure of |Tree| hides the composition of this effect,
+namely the substitution of trees.
+\begin{center}
+\Tree [. {}
+  [. |0|
+    [. |0 + 1| ]
+    [. |0 + 2| ]
+    [. |0 + 3| ]
+  ]
+  [. |10|
+    [. |10 + 1| ]
+    [. |10 + 2| ]
+    [. |10 + 3| ]
+  ]
+]
+\end{center}
+
 However, this tree structure performed rather badly.
 Profiling the application revealed
 that most of the time was spent performing substitution on the tree.
 This takes a lot of time for high trees
 since it has to be traversed completely to get to the leaves.
-This problem turns out to be well-known. \cite{codensity}
+This problem turns out to be well-known \cite{codensity}.
 The solution is called the \emph{codensity transformation}.
 It works by \enquote{focusing} on the leaves of the tree
 to speed up substitution.
@@ -889,7 +934,7 @@ it was more than ten times faster.
 Such a |CTree| is converted to a |Tree| after construction,
 so that it can be traversed.
 
-I implemented two kinds of traversals:
+I implemented two kinds of traversals for evaluation trees:
 breadth-first search and depth-first search,
 each with and without a depth limit.
 Each of them has advantages and drawbacks.
@@ -901,19 +946,70 @@ but uses more memory.
 A more detailed comparison of the two
 can be found in the Section 3.6.
 
+It was mentioned before that the monad |EvalT TreeM|
+combines the nondeterministic effects of trees
+with the stateful effects of the |EvalT| monad transformer.
+How convenient this is in practice,
+can be seen at the implementation of the Guess rule for natural numbers.
+The part of the function that generates the evaluation tree
+for a logic variable |v| is given below in a slightly simplified form.
+\begin{code}
+do  n <- lift (branchNatLongerThan 0)
+    updateVarOnHeap v (ELit (LNat n))
+    return (Literal (LNat n))
+\end{code}
+In the following explanation, I will omit some technical details,
+such as the |lift| function,
+but it should give a rough idea of how it works:
+The expression |branchNatLongerThan 0| uses |branch| internally
+to create the evaluation tree for natural numbers
+that was discussed in the previous section.
+For every natural number |n| in this tree,
+|updateVarOnHeap| sets the value of the variable |v| on the heap
+to the literal |n|, in each branch of the computation.
+Finally, the result of the computation is given
+by the literal |n|, which is in flat normal form.
+This example combines both nondeterministic and stateful effects,
+triggered by functions like |branch| or |updateVarOnHeap|,
+One does not have to manually propagate them through the program,
+which makes the actual computation much clearer.
+
 \subsection{REPL}
 
 As an interface to the evaluation functions,
 I created a REPL (read-evaluate-print-loop)
 where the user can enter expressions
 and have them evaluated.
-Before talking about the details,
+
+The REPL can evaluate expressions functionally,
+when given the commands \verb!:e! or \verb!:eval!,
+printing the results together with the corresponding heap.
+When no command is given, it evaluates expressions to reduced normal form.
+This can also be explicitly specified
+by the commands \verb!:f! or \verb!:force!.
+In this case, the heap is unnecessary,
+since there are no variables in reduced normal form.
+The expressions are type checked before evaluation
+and the computation time is displayed afterwards.
+Evaluation can also be interrupted with the key combination \verb!Ctrl + C!,
+which is useful for non-terminating expressions.
+
+There are two parameters that the user can change,
+namely the search depth limit, which is infinity by default,
+and the search strategy, which is BFS by default.
+The values of the parameters can be viewed with \verb!:get!
+and they can be changed using \verb!:set!.
+
+As an illustration,
 let us have a look at an example session.
-The REPL was loaded with the file \verb!Test.cumin! as a command-line argument.
+The REPL was loaded with the file \verb!List.cumin!,
+which contains the |last| function from the introducton,
+as a command-line argument.
+
 {\small
 \begin{verbatim}
 Type ":h" (without quotes) for help.
-Loaded module `Test`.
+Loaded module `List`.
 > :h
 List of commands:
  * :h, :help
@@ -941,6 +1037,17 @@ CPU time elapsed: 0.000 s
  = True<::>
 
 CPU time elapsed: 0.000 s
+> choose<:Bool:> True False
+ :: Bool
+ = True<::>
+ = False<::>
+
+CPU time elapsed: 0.000 s
+> last<:Bool:> [True, False]<:Bool:>
+ :: Bool
+ = False<::>
+
+CPU time elapsed: 0.000 s
 > :get
 Current settings:
  * depth=inf:
@@ -960,12 +1067,12 @@ CPU time elapsed: 0.000 s
 > :e let x :: List Bool free in x
  :: List Bool
  ~> [_1_x -> Nil<:Bool:>]
-      |- Nil<:Bool:>
+      : Nil<:Bool:>
  ~> [_1_x -> Cons<:Bool:>
     _2_conArg _3_conArg
     ,_2_conArg -> free :: Bool
     ,_3_conArg -> free :: List Bool]
-      |- Cons<:Bool:> _2_conArg
+      : Cons<:Bool:> _2_conArg
       _3_conArg
 
 CPU time elapsed: 0.000 s
@@ -974,32 +1081,27 @@ Bye.
 \end{verbatim}
 }
 
+The sample session demonstrates the evaluation of deterministic examples,
+like |1 + 1| or the |last| function to retrieve the last element of a list,
+as well as nondeterministic examples with logic variables.
+In the latter case, evaluation has more than one results,
+and all of them are displayed.
+The use of \verb!:get! demonstrates the default strategy and search depth limit.
+Afterwards, the latter is set to 3 with the \verb!:set! command.
+Only because of that, the next evaluation terminates,
+yielding three boolean lists.
+Without the depth limit, there would be an infinite number of results.
+While all expressions so far were evaluated to reduced normal form,
+the last example uses the command \verb!:e! to evaluate to flat normal form.
+As a consequence, the results are not fully evaluated.
+\eg the |Cons| constructor is applied to logic variables on the heap.
+
 The REPL is implemented using the \emph{Haskeline} library\footnote{
 \url{https://hackage.haskell.org/package/haskeline}},
 which is also used by GHCi,
 the REPL of the Glasgow Haskell compiler.
 It provides a history of the previous inputs
 that can be selected using the up and down keys.
-
-The REPL can evaluate expressions functionally,
-when given the commands \verb!:e! or \verb!:eval!,
-printing the results together with the corresponding heap.
-By default, it evaluates expressions to reduced normal form.
-This can also be explicitly specified
-by the commands \verb!:f! or \verb!:force!.
-In this case, the heap is unnecessary,
-since there are no variables in reduced normal form.
-As can be seen, the expressions are type checked before evaluation
-and the computation time is displayed afterwards.
-Evaluation can also be interrupted with the key combination \verb!Ctrl + C!,
-which is useful for non-terminating expressions.
-
-There are two parameters that the user can change,
-namely the search depth limit, which is infinity by default,
-and the search strategy, which is BFS by default.
-The values of the parameters can be viewed with \verb!:get!
-and they can be changed using \verb!:set!,
-as is exemplified in the sample run above.
 
 \subsection{Testing}
 
