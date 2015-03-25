@@ -155,14 +155,14 @@ because each (sub-)function needs to be wrapped in |set|-braces.
 \subsection{Examples}
 
 Some example translations can be seen below.\\[.5cm]
-\begin{minipage}{.4\textwidth}%
+\begin{minipage}{.39\textwidth}%
 \texths\small%
 \begin{code}
 id :: forall a. a -> a
 id x = x
 \end{code}
 \end{minipage}
-\begin{minipage}{.6\textwidth}%
+\begin{minipage}{.59\textwidth}%
 \texths\small%
 \begin{code}
 id :: forall a. Set (a -> Set a)
@@ -170,7 +170,7 @@ id = { \x :: a -> { x } }
 \end{code}
 \end{minipage}
 \\[.5cm]
-\begin{minipage}{.4\textwidth}%
+\begin{minipage}{.39\textwidth}%
 \texths\small%
 \begin{code}
 choose :: forall a. a -> a -> a
@@ -178,7 +178,7 @@ choose x y = let c :: Bool free in
   case c of { True -> x; False -> y }
 \end{code}
 \end{minipage}
-\begin{minipage}{.6\textwidth}%
+\begin{minipage}{.59\textwidth}%
 \texths\small%
 \begin{code}
 choose :: forall a. Set (a -> Set (a -> Set a))
@@ -188,7 +188,7 @@ choose = { \x :: a -> { \y :: a ->
 \end{code}
 \end{minipage}
 \\[.5cm]
-\begin{minipage}{.4\textwidth}%
+\begin{minipage}{.39\textwidth}%
 \texths\small%
 \begin{code}
 length :: forall a. List a -> Nat
@@ -197,7 +197,7 @@ length xs = case xs of
   Cons y ys -> 1 + length<:a:> ys
 \end{code}
 \end{minipage}
-\begin{minipage}{.6\textwidth}%
+\begin{minipage}{.59\textwidth}%
 \texths\small%
 \begin{code}
 length :: forall a. Set (List a -> Set Nat)

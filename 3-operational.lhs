@@ -298,7 +298,7 @@ and where |vec y_n| are fresh variables
 \label{functional-eval}
 \hrulefill
 \end{figure}
-\begin{figure}[h]
+\begin{figure}[t]
 \begin{tabularx}{\textwidth}{r >{\setstretch{1.8}}X}
 {[RNF]}
 &\AxiomC{|Delta : e ~> Delta' : v|}
