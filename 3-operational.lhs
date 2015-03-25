@@ -1005,7 +1005,7 @@ and they can be changed using \verb!:set!.
 As an illustration,
 let us have a look at an example session.
 The REPL was loaded with the file \verb!List.cumin!,
-which contains the |last| function from the introducton,
+which contains the |last| function from the introduction,
 as a command-line argument.
 
 {\small

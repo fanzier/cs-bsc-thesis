@@ -121,7 +121,7 @@ acting on these.
 For example |1 + 1| will be translated to
 > set 1 >>= \x :: Nat -> set 1 >>= \y :: Nat -> set (x + y)
 Needless to say,
-this translation is rather naïve and not very efficient --
+this translation is rather naive and not very efficient --
 it could simply be translated to |{1 + 1}|.
 We will address this problem later.
 
@@ -228,7 +228,7 @@ Given an expression of the form |(\x -> e_1) e_2|,
 one can turn it into |e_1[e_2/x]|.
 However, $\beta$-reducing is not always beneficial:
 Substituting the expression |e_2| into |e_1|
-can lead to wasteful recomputation
+can lead to wasteful re-computation
 if |x| occurs in |e_1| more than once.
 Hence, this simplification should only be used
 when the bound variable occurs at most once.\footnote{

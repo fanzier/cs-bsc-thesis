@@ -107,7 +107,7 @@ The proofs employ the monad laws.
 > s >>= (sMap f . g)
 > ~= -- definition of |(.)|
 > s >>= (\x -> sMap f (g x))
-> ~= -- definiton of |sMap|
+> ~= -- definition of |sMap|
 > s >>= (\x -> g x >>= (set . f))
 > ~= -- third monad law
 > (s >>= g) >>= (set . f)
@@ -243,7 +243,7 @@ let us look at how functions can be proved deterministic.
 Consider the \cumin{} function |double| as an example.
 One can see that in this case, a witness is given by |\x :: Nat -> x + x|.
 > trans double
-> ~= -- translating to \salt{} and symplifying
+> ~= -- translating to \salt{} and simplifying
 > double
 > ~= -- inlining |double|
 > { \x :: Nat -> { x + x } }

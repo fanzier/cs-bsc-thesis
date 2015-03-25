@@ -266,7 +266,7 @@ and finally the actual function type.
 One does not need to write the empty context |() =>|
 if the function has no |Data| constraints,
 and if there are no type variables,
-the $\forall.$ may be droppped, as well.
+the $\forall.$ may be dropped, as well.
 
 The shape of \cumin{} expressions is shown in \cref{cumin-exp}.
 \begin{figure}[t]
@@ -351,7 +351,7 @@ The straightforward correspondence is shown in \cref{cumin-plain}.
 \hrulefill
 \end{figure}
 As in Haskell, code can also be written using indentation
-instead of braces and semicola:
+instead of braces and semicolons:
 > case e of
 >   C_1 .. -> ..
 >   C_2 .. -> ..
@@ -721,9 +721,7 @@ This functionality was implemented together with Fabian Thorand,
 whose bachelor thesis is also concerned with \cumin{} and \salt{}.
 
 The functionality is split into three packages:
-\texttt{funlogic-common}, \texttt{language-cumin} and \texttt{language-salt}.\footnote{
-They can be found an Github:
-\url{https://github.com/fatho/ba-funlogic-common}}
+\texttt{funlogic-common}, \texttt{language-cumin} and \texttt{language-salt}.
 The first one contains common functionality for both \cumin{} and \salt{},
 like the representation of types.
 The other two packages deal with the two languages specifically,
