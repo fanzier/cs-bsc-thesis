@@ -3,7 +3,7 @@
 In this chapter,
 I will give a more precise description of \cumin{} and \salt{},
 as well as some remarks on the implementation of parsers and type checkers.
-This was done together with Fabian Thorand,
+This part of the implementation was done together with Fabian Thorand,
 who wrote his bachelor thesis,
 which is concerned with other aspects of \cumin{} and \salt{},
 over the same period of time.
@@ -45,7 +45,7 @@ the following notation is widely used.
 This means that the consequence is a valid judgment
 if all the assumptions can be shown to be valid judgments.
 Oftentimes, these judgments will only make sense in a certain \emph{context},
-denoted |Gamma|.
+denoted~|Gamma|.
 The judgment is then written with the turnstile symbol:
 $\Gamma \vdash \text{judgment}$.
 More details on the presentation of typing systems
@@ -58,20 +58,20 @@ or a type constructor applied to a number of types,
 which must always be fully applied.
 A type constructor is one of the following.
 \begin{itemize}
-\item The name of an algebraic data type
-\item |->|, the function type constructor, with two arguments.
+\item The name of an algebraic data type.
+\item The function type constructor |->|, with two arguments.
 It associates to the right.
 \item |Nat|, a primitive type for natural numbers.
 \item Only in \salt{}:
-|Set| to create set types, with one argument
+|Set| to create set types, with one argument.
 \end{itemize}
 
-To formalize the type formation rules,
+To make this exact,
 one first needs to describe
-what type contexts look like (\cref{contexts}).
+what valid type contexts look like (\cref{contexts}).
 These are the allowed contexts in typing judgments.
-The previous description of types is
-formalized in \cref{types}.
+The above description of types can then be
+formalized and is shown in \cref{types}.
 
 Typing judgments are always with respect to a given program $P$.
 After all, typing judgments can depends on the ADTs defined in $P$ and,
@@ -153,7 +153,7 @@ I will often abbreviate it like this:
 > data A (vec alpha_l) = vec (C_m (vec tau_mn))
 
 The only type variables allowed in the types |vec tau_mn| are |vec alpha_l|.
-Higher-kinded type variables are not allowed,
+Higher-kinded type variables are not supported,
 which means that a type variable cannot be applied to other types.
 As a consequence, the following data type is invalid in \cumin{} and \salt{}
 although it is fine in Haskell.
