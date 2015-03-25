@@ -561,7 +561,7 @@ Program & unoptimized & optimized \\
 \hline
 Peano addition & 23\,ms & 10\,ms \\
 Peano subtraction & 220\,ms & 180\,ms \\
-Peano division & 3.9\,ms & 0.9\,ms \\
+Peano division & 570\,ms & 270\,ms \\
 Last & 96\,ms & 47\,ms \\
 Permutation sort & 44\,ms & 15\,ms
 \end{tabular}
@@ -570,6 +570,6 @@ Permutation sort & 44\,ms & 15\,ms
 \hrulefill
 \end{figure}
 As expected, the simplifications speed up the execution of \salt{} programs
-significantly.
-In the case of Peano division, the optimized version is even four times as fast
+significantly, on average by a factor of two.
+In the case of permutation sort, the optimized version is even three times as fast
 as the unoptimized one.
