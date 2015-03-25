@@ -27,7 +27,7 @@ The translation method is pessimistic insofar
 as it transforms every \cumin{} expressions
 into a set-typed expressions
 even if it is deterministic.
-This shortcoming will be partly addressed in Section 4.2.
+This shortcoming will be partly addressed in \cref{sec:simplifications}.
 
 \subsection{Translating Types}
 
@@ -214,6 +214,7 @@ length = {\xs :: List a -> {xs} >>=
 \\[.5cm]
 
 \section{Improving the Generated \salt{} Code}
+\label{sec:simplifications}
 
 As one can see in the example programs,
 the translated expressions are often unnecessarily set-typed,
@@ -238,7 +239,7 @@ However, there is still some code being duplicated,
 which may increase program size considerably.
 To keep things simple, I did not explore that further.}
 Note that variable capture on substitution is an issue, as well.
-It is addressed in Section 4.3.
+It is addressed in \cref{sec:trans-implementation}.
 
 Similarly to $\beta$-reduction,
 there is $\eta$-reduction:
@@ -246,7 +247,7 @@ An expression of the form |\x -> f x| is equivalent to |f|
 if |x| does not occur freely in |f|.
 In contrast to $\beta$-reduction,
 this transformation is always safe and beneficial.
-Note that while $\eta$-reduction is not valid for \cumin{} (\cf Section 3.1),
+Note that while $\eta$-reduction is not valid for \cumin{} (\cf \cref{sec:pecularities}),
 it is allowed in \salt{}
 because there is no nondeterminism or call-time choice.
 
@@ -358,9 +359,10 @@ length = { \xs :: List a -> case xs of
 This is a considerable improvement.
 There is only one thing that could be done better in a manual translation,
 by exploiting the fact that the function is in fact deterministic,
-which is discussed in Section 5.4 by means of the same example.
+which is discussed in \cref{sec:nda-rec} by means of the same example.
 
 \section{Implementation}
+\label{sec:trans-implementation}
 
 The implementation is relatively close to the translation
 and simplification rules described above.
@@ -375,7 +377,7 @@ but they are translated to lambda abstractions, which need one.
 As a consequence, one has to keep track of the types of bound variables
 while traversing the syntax tree.
 Another problem is fresh variables and capture avoidance
-which was briefly discussed in Section 2.5.1.
+which was briefly discussed in \cref{sec:ast}.
 Fresh variables could be generated as before, by appending a unique number.
 Variable capture is a real problem, however:
 $\beta$-reducing |(\z -> (\y -> z)) (\x -> y)|
@@ -394,6 +396,7 @@ but by \enquote{how many levels up the syntax tree they were bound}.
 This is made precise below.
 
 \subsection{Nameless Representation}
+\label{sec:bound}
 
 To handle bound variables, I used the \verb!bound! library\footnote{
 \url{http://hackage.haskell.org/package/bound}
@@ -536,7 +539,7 @@ on the performance of \salt{} programs.
 
 I created a benchmark\footnote{
 a separate executable in the implementation, called \verb!opt-bench!}
-using the same infrastructure as in Section 3.6.
+using the same infrastructure as in \cref{sec:op-sem-assessment}.
 The setup was the following:
 I wrote a \cumin{} program with some expressions to benchmark,
 which was then translated to \salt{} using my implementation,

@@ -279,7 +279,7 @@ there must be at most one evaluation result for the function application.
 The definition and properties of |sMap| from above are useful
 in order to prove that functions are multideterministic.
 To give a concrete example,
-let us show that |maybeDouble1| from the beginning of Chapter 3
+let us show that |maybeDouble1| from \cref{sec:pecularities}
 is multideterministic.
 Recall the \cumin{} definitions:
 > maybeDouble1 :: Nat -> Nat
@@ -329,6 +329,7 @@ On the other hand, such a proof fails for |maybeDouble2|,
 which is another illustration of their discrepancy.
 
 \section{Recursive Definitions}
+\label{sec:nda-rec}
 
 From what we discussed before,
 it is not clear how to handle recursion.

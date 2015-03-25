@@ -27,6 +27,7 @@ Before that, I want to point out some properties of \cumin{}
 that may seem surprising at first.
 
 \section{Peculiarities of \cumin{}}
+\label{sec:pecularities}
 
 To gain a better understanding of nondeterminism in \cumin{},
 let us look at some examples of \cumin{} functions.
@@ -326,9 +327,10 @@ Another technicality to discuss is related to substitution:
 A variable is called \emph{fresh} if its name does not occur
 in the relevant expression or the \cumin{} program.
 Since we only ever substitute with fresh variables in the evaluation rules,
-variable capture (cf. Section 2.5.1) cannot happen.
+variable capture (cf. \cref{sec:ast}) cannot happen.
 
 \section{Explanation of the Semantics}
+\label{sec:op-sem-explanation}
 
 First note that the evaluation of an expression is not unique.
 That is what nondeterminism is about, after all.
@@ -784,7 +786,7 @@ To guarantee that all variables are fresh,
 every new variable name includes the current value of a counter
 which is increased afterwards,
 hence ensuring that all generated variables are unique.
-Avoiding variable capture on substitution (cf. Section 2.5.1)
+Avoiding variable capture on substitution (\cf \cref{sec:ast})
 has to be taken care of as well.
 In this case, however, it cannot happen
 since one only ever substitutes fresh variables for existing ones.
@@ -807,7 +809,7 @@ Apply the Fun rule first, whenever possible.
 If not, try the Apply rule.
 In case none of those worked,
 use the Flatten rule.
-This strategy always makes progress (cf. Section 3.3).
+This strategy always makes progress (cf. \cref{sec:op-sem-explanation}).
 
 All in all, logical evaluation proceeds like this:
 It checks whether the expression is already a value,
@@ -944,7 +946,7 @@ not every solution will be found in finite time.
 Breadth-first search is complete
 but uses more memory.
 A more detailed comparison of the two
-can be found in the Section 3.6.
+can be found in \cref{sec:op-sem-assessment}.
 
 It was mentioned before that the monad |EvalT TreeM|
 combines the nondeterministic effects of trees
@@ -1116,6 +1118,7 @@ The test expressions are also evaluated using this semantics,
 and it is checked whether the results match the operational one.
 
 \section{Assessment of the Search Strategies}
+\label{sec:op-sem-assessment}
 
 To examine the effect of different search strategies,
 I created a benchmark\footnote{

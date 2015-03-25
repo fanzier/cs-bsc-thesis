@@ -47,7 +47,7 @@ that can be derived solely from its type signature.}
 
 In the later sections of this chapter,
 I present an example-based overview of these languages.
-A more formal description can be found in Chapter 2.
+A more formal description can be found in chapter 2.
 But first, let me give a brief introduction to Haskell,
 for one thing because it is the language that Curry is built upon,
 for another thing because the implementation part of this thesis
@@ -411,7 +411,7 @@ There are two different kinds of semantics,
 namely a \emph{denotational} or an \emph{operational} semantics.
 The former gives a mathematical meaning to programs,
 the latter describes a program's execution more directly.
-As part of this thesis, I implemented an operational semantics (Chapter 3)
+As part of this thesis, I implemented an operational semantics (chapter 3)
 for a variant of \cumin{} that is more general than in \cite{orig},
 for instance, it supports general algebraic data types.
 At the same time, Fabian Thorand developed an implementation of
@@ -427,13 +427,13 @@ should behave the same.
 
 Moreover, \cumin{} programs can be translated to \salt{}.
 I implemented this translation, adapted from \cite{orig},
-as well as certain ways to simplify the generated \salt{} code (Chapter 4).
+as well as certain ways to simplify the generated \salt{} code (chapter 4).
 It creates an interesting connection between the two languages
 since Fabian Thorand implemented semantics for both of them.
 However, the main goal of the translation and simplifications is
 to better understand the nondeterminism in \cumin{}
 since it is made more explicit in \salt{}.
 How one can analyze the nondeterministic behavior of \cumin{} programs this way,
-is explained by way of examples in Chapter 5.
+is explained by way of examples in chapter 5.
 But first, the languages \cumin{} and \salt{} have to be properly specified,
 which is the purpose of the next chapter.

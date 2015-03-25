@@ -615,7 +615,7 @@ It will yield the result of |e| only if |cond| is true
 and fail otherwise.
 
 There is also an alternative prelude that is generated
-by the translation method described in Chapter 4.
+by the translation method described in chapter 4.
 It behaves the same but due to the nature of the translation,
 its functions contain more sets than necessary, for example,
 |choose| is translated to |choose :: Set (a -> Set (a -> Set a))|.
@@ -730,6 +730,7 @@ The other two packages deal with the two languages specifically,
 each one providing a parser, pretty-printer and type checker.
 
 \subsection{Abstract Syntax Tree}
+\label{sec:ast}
 
 The objects in \cumin{} and \salt{} are straightforwardly modeled
 as algebraic data types in Haskell.
@@ -754,7 +755,7 @@ yields |\y -> \x -> y|, which is incorrect
 as the variable |y| is not free anymore.
 For the correct solution |\y' -> \x -> y|, variables have to be renamed.
 There are more elaborate representations for capture avoidance,
-like the one I explain in Section 4.3.1,
+like the one I explain in \cref{sec:bound},
 but we opted against that complexity in the common packages
 since the kind of substitution needed for type checking,
 namely instantiating type variables on function invocations,
@@ -816,7 +817,7 @@ which makes syntax highlighting in the terminal possible.
 The pretty-printer is aware of operator precedence,
 so it only uses parentheses where necessary.
 It is used for automatically generated programs, debugging
-and in the translation program (see Chapter 4).
+and in the translation program (see chapter 4).
 
 \subsection{Type Checker}
 
