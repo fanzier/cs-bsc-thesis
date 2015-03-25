@@ -720,7 +720,7 @@ and also a pretty printer will be useful.
 This functionality was implemented together with Fabian Thorand,
 whose bachelor thesis is also concerned with \cumin{} and \salt{}.
 
-The implementation was done in Haskell and is split into three packages:
+The functionality is split into three packages:
 \texttt{funlogic-common}, \texttt{language-cumin} and \texttt{language-salt}.\footnote{
 They can be found an Github:
 \url{https://github.com/fatho/ba-funlogic-common}}
@@ -728,6 +728,16 @@ The first one contains common functionality for both \cumin{} and \salt{},
 like the representation of types.
 The other two packages deal with the two languages specifically,
 each one providing a parser, pretty-printer and type checker.
+
+All implementations in this thesis were developed in Haskell
+using the standard tools,
+namely the \emph{Glasgow Haskell Compiler} (GHC)\footnote{
+\url{https://www.haskell.org/ghc/}}, version 7.8.3,
+and the \emph{cabal} build system\footnote{
+\url{https://www.haskell.org/cabal/}}, version 1.18.
+The dependencies were installed from \emph{Hackage}.\footnote{
+The Haskell package archive, \url{http://hackage.haskell.org/}}
+Detailed Installation instructions can be found on the attached CD.
 
 \subsection{Abstract Syntax Tree}
 \label{sec:ast}
