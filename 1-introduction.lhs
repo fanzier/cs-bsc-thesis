@@ -116,7 +116,7 @@ to have its type specialized to |Int|.
 It should work for any type.
 Indeed, Haskell allows us to write
 > applyTwice :: (a -> a) -> a -> a
-|a| is a type variable and can be instantiated with any type.
+Here, |a| is a type variable and can be instantiated with any type.
 For example, when using this function with |double|,
 |a| will be instantiated to type |Int|
 in order to match the type of |double|.
