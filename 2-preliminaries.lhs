@@ -395,7 +395,6 @@ to make programs easier to read and write.
 List literals can be written in the natural way |[e_1, .., e_n]<:tau:>|$\!\!\!$.
 This is desugared to the expression
 |Cons<:tau:> e_1 (.. (Cons<:tau:> e_n Nil<:tau:>) ..)|.
-\todo[inline]{more syntactic sugar}
 
 \subsection{Typing}
 

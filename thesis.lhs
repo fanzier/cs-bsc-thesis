@@ -13,7 +13,6 @@
 \usepackage[Lenny]{fncychap}
 \usepackage[headsepline]{scrlayer-scrpage}
 
-\usepackage{todonotes}
 \usepackage{bussproofs}
 \usepackage{tikz}
 \usepackage{tikz-qtree}
