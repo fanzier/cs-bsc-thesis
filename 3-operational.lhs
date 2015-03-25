@@ -174,8 +174,7 @@ This is sometimes also called \enquote{forcing}.
 How can these normal forms be obtained?
 This is done using the rules shown in
 \cref{logical-eval,functional-eval,force-eval}.
-\begin{figure}[b!]
-\hrulefill
+\begin{figure}[p!]
 \begin{tabularx}{\textwidth}{r >{\setstretch{1.8}}X}
 {[Val]}
 &\AxiomC{|Delta : v ~>* Delta : v|}
@@ -592,7 +591,7 @@ and |Delta' := Delta[c' /-> False]|.
 \LeftLabel{Fun}
 \UnaryInfC{|[] : coin ~>* [c' /-> False] : 0|}
 \end{prooftree}
-where the left subderivation continues like this:
+The left subderivation continues as follows.
 \begin{prooftree}
   \AxiomC{|[x' /-> 0] : choose<:Bool:> x' ~>* [x' /-> 0] : choose<:Bool:> x'|}
   \LeftLabel{Let}
@@ -600,7 +599,7 @@ where the left subderivation continues like this:
 \LeftLabel{Flatten}
 \UnaryInfC{|[] : choose<:Bool:> 0 ~>* [x' /-> 0] : choose<:Bool:> x'|}
 \end{prooftree}
-and the right one like this:
+The right subderivation goes on like this.
 \begin{prooftree}
     \AxiomC{|Delta[c' /-> free :: Bool] : c' ~>* Delta[c' /-> free :: Bool] : c'|}
     \LeftLabel{Guess$_|False|$}
@@ -995,6 +994,7 @@ The expressions are type checked before evaluation
 and the computation time is displayed afterwards.
 Evaluation can also be interrupted with the key combination \verb!Ctrl + C!,
 which is useful for non-terminating expressions.
+To quit the REPL, the user should type \verb!:q! or \verb!:quit!.
 
 There are two parameters that the user can change,
 namely the search depth limit, which is infinity by default,
@@ -1028,9 +1028,9 @@ List of commands:
         List all configurable properties and their current values.
  * :s <prop>=<val>, :set <prop>=<val>
         Set property <prop> to value <val>. For details use ':get'.
-> 1 + 1
- :: Nat
- = 2
+> last<:Bool:> [True, False]<:Bool:>
+ :: Bool
+ = False<::>
 
 CPU time elapsed: 0.000 s
 > let x :: Bool free in x
@@ -1042,11 +1042,6 @@ CPU time elapsed: 0.000 s
 > choose<:Bool:> True False
  :: Bool
  = True<::>
- = False<::>
-
-CPU time elapsed: 0.000 s
-> last<:Bool:> [True, False]<:Bool:>
- :: Bool
  = False<::>
 
 CPU time elapsed: 0.000 s
@@ -1083,19 +1078,19 @@ Bye.
 \end{verbatim}
 }
 
-The sample session demonstrates the evaluation of deterministic examples,
-like |1 + 1| or the |last| function to retrieve the last element of a list,
-as well as nondeterministic examples with logic variables.
+The sample session demonstrates the evaluation of a deterministic example,
+namely the |last| function,
+and nondeterministic examples with logic variables.
 In the latter case, evaluation has more than one results,
 and all of them are displayed.
-The use of \verb!:get! demonstrates the default strategy and search depth limit.
+The use of \verb!:get! shows the default strategy and search depth limit.
 Afterwards, the latter is set to 3 with the \verb!:set! command.
 Only because of that, the next evaluation terminates,
 yielding three boolean lists.
 Without the depth limit, there would be an infinite number of results.
 While all expressions so far were evaluated to reduced normal form,
-the last example uses the command \verb!:e! to evaluate to flat normal form.
-As a consequence, the results are not fully evaluated.
+the last example uses the command \verb!:e! to evaluate only to flat normal form.
+As a consequence, the results are not fully evaluated,
 \eg the |Cons| constructor is applied to logic variables on the heap.
 
 The REPL is implemented using the \emph{Haskeline} library\footnote{
