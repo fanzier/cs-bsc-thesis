@@ -254,7 +254,7 @@ One can see that in this case, a witness is given by |\x :: Nat -> x + x|.
 
 We will now consider a weaker notion of determinism, given in \cite{orig}.
 A \cumin{} expression |f :: tau_1 -> tau_2| is called \emph{multideterministic}
-if there is a \salt{} function |f' :: Set (tytrans tau_1 -> tytrans tau_2)|
+if there is a set of \salt{} functions |f' :: Set (tytrans tau_1 -> tytrans tau_2)|
 such that |trans f ~= sMap (\g -> set . g) f'|.
 Again, such an |f'| is called a \emph{witness}.
 
@@ -299,7 +299,7 @@ Their \salt{} translations look like this after simplification:
 >   case c of { True -> { x }; False -> { y } } } }
 We now want to analyze the \salt{} function |maybeDouble1|
 and try to find a witness for its multideterminism.
-First, we inline |choose|.
+First, we inline |choose| and simplify.
 > maybeDouble1 = id<:Nat:> >>= \i ->
 >   double >>= \d ->
 >   unknown<:Bool:> >>= \b ->
@@ -333,7 +333,7 @@ which is another illustration of their discrepancy.
 
 From what we discussed before,
 it is not clear how to handle recursion.
-For illustration, consider the infinite list:
+As an illustration, consider the infinite list:
 > ones :: List Nat
 > ones = Cons<:Nat:> 1 ones
 Intuitively, it is clear that this is deterministic
@@ -385,7 +385,7 @@ one can reason as follows.
 > g (.. h (g' failed<:tau':>!) ..)
 > ~= -- \dots iterating \dots
 > ~= h (g' (.. (g' failed<:tau':>!) ..))
-So |f| is equivalent to the \emph{limit} of
+So |f| is equivalent to the \enquote{limit} of
 |h (g' failed<:tau':>!)|, |h (g' (g' failed<:tau':>!))| etc.,
 which means it is equivalent to |f| defined as |f = h f'| where |f' = g' f'|.
 

@@ -5,7 +5,7 @@ what well-formed \cumin{} programs look like,
 we want to define their meaning
 by giving them a \emph{semantics}.
 There are two kinds of semantics,
-\emph{denotational} and \emph{operational}.
+\emph{denotational} and \emph{operational} ones.
 A denotational semantics describes
 the meaning of programs
 as mathematical objects.
@@ -263,10 +263,11 @@ but |b_i| is |False|.
 \\[1em]
 {[CaseVar]}
 &\AxiomC{|Delta : e ~> Delta' : C<:vec tau_m:> (vec x_n)|}
-\AxiomC{|Delta'[x /-> C<:vec tau_m:> (vec x_n)] : e ~>* Delta'' : v|}
-\BinaryInfC{|Delta : case e of { ..; x -> e } ~>* Delta'' : v|}
+\AxiomC{|Delta'[y /-> C<:vec tau_m:> (vec x_n)] : e'[y/x] ~>* Delta'' : v|}
+\BinaryInfC{|Delta : case e of { ..; x -> e' } ~>* Delta'' : v|}
 \DisplayProof
-\newline only if none of the constructor patterns matched the constructor |C|.
+\hfill where |y| is fresh
+\newline Only applicable if none of the constructor patterns matched the constructor |C|.
 \end{tabularx}
 \caption{Rules for logical evaluation}
 \label{logical-eval}
@@ -283,13 +284,13 @@ but |b_i| is |False|.
 &\AxiomC{|Delta: e ~>* Delta'[x :: Nat /-> free] : x|}
 \UnaryInfC{|Delta: e ~> Delta'[x::Nat /-> n] : n |}
 \DisplayProof
-\hfill for any literal |n|
+\hfill for any natural number |n|
 \\[1em]
 {[Guess$_|C|$]}
 &\AxiomC{|Delta: e ~>* Delta'[x /-> free :: A (vec rho_m)] : x|}
 \UnaryInfC{|Delta: e ~> Delta'[ vec (y_n /-> free :: tau_n[vec (rho_m/alpha_m)]), x /-> C<:vec rho_m:> (vec y_n)] : C<:vec rho_m:> (vec y_n)|} 
 \DisplayProof
-\newline for any constructor |C| of |A| with argument types |tau_n|
+\hfill for any constructor |C| of the ADT |A (vec alpha_m)| with argument types |vec tau_n|
 and where |vec y_n| are fresh variables
 \end{tabularx}
 \caption{Rules for functional evaluation}
@@ -322,7 +323,7 @@ the evaluation rules are implicitly indexed by a given \cumin{} program.
 This is again omitted from the notation for the sake of readability.
 Another technicality to discuss is related to substitution:
 A variable is called \emph{fresh} if its name does not occur
-in the relevant expression or the \cumin{} program.
+in the relevant expression and the \cumin{} program.
 Since we only ever substitute with fresh variables in the evaluation rules,
 variable capture (\cf \cref{sec:ast}) cannot happen.
 
@@ -374,7 +375,7 @@ it does not need to be evaluated further.
   until it is needed (Lookup).
   This is \emph{lazy evaluation}.
   \item \textbf{Free.}
-  Evaluating |let .. free| bindings work analogously.
+  Evaluating |let .. free| bindings works analogously.
   \end{itemize}
 \item \textbf{Function application.}
 There are three rules governing function application.
@@ -422,7 +423,7 @@ and the sum of the two literals is the result.
 \item \textbf{Equality tests.}
 In order to find out whether two expressions are equal,
 they first have to be evaluated to at least flat normal form.
-How evaluation continues depends on the result.
+How evaluation continues, depends on the result.
   \begin{itemize}
   \item \textbf{EqNat.}
   If the resulting values are natural numbers,
@@ -509,7 +510,7 @@ there is nothing to be done.
 \item \textbf{Force.}
 If the flat normal form of an expression
 is a constructor or function application,
-force all its arguments to reduced normal form.
+all its arguments are forced to reduced normal form.
 Then the result is in reduced normal form as well.
 \end{itemize}
 
@@ -647,6 +648,8 @@ In contrast, consider the derivation for |let c = coin in c + c|.
   \LeftLabel{FNF}
   \UnaryInfC{|[c' /-> coin] : c' ~> Delta[c' /-> i] : i|}
     \AxiomC{|Delta[c' /-> i] : c' ~>* Delta[c' /-> i] : i|}
+    \LeftLabel{Lookup}
+    \UnaryInfC{|Delta[c' /-> i] : c' ~>* Delta[c' /-> i] : i|}
   \LeftLabel{FNF}
   \UnaryInfC{|Delta[c' /-> i] : c' ~> Delta[c' /-> i] : i|}
 \LeftLabel{Plus}
@@ -812,7 +815,7 @@ All in all, logical evaluation proceeds like this:
 It checks whether the expression is already a value,
 and if so, does nothing (Val rule).
 Otherwise, depending on the shape of the expression,
-apply a suitable rule according to the details
+a suitable rule is applied according to the details
 in the previous paragraph.
 Functional evaluation invokes logical evaluation first.
 If the result is already in flat normal form,
@@ -969,7 +972,7 @@ to the literal |n|, in each branch of the computation.
 Finally, the result of the computation is given
 by the literal |n|, which is in flat normal form.
 This example combines both nondeterministic and stateful effects,
-triggered by functions like |branch| or |updateVarOnHeap|,
+triggered by functions like |branch| or |updateVarOnHeap|.
 One does not have to manually propagate them through the program,
 which makes the actual computation much clearer.
 
@@ -987,7 +990,7 @@ When no command is given, it evaluates expressions to reduced normal form.
 This can also be explicitly specified
 by the commands \verb!:f! or \verb!:force!.
 In this case, the heap is unnecessary,
-since there are no variables in reduced normal form.
+since there are no variables in the reduced normal form.
 The expressions are type checked before evaluation
 and the computation time is displayed afterwards.
 Evaluation can also be interrupted with the key combination \verb!Ctrl + C!,
@@ -1003,7 +1006,7 @@ and they can be changed using \verb!:set!.
 As an illustration,
 let us have a look at an example session.
 The REPL was loaded with the file \verb!List.cumin!,
-which contains the |last| function from the introduction,
+which contains the function |last| from the introduction,
 as a command-line argument.
 
 {\small
@@ -1079,7 +1082,7 @@ Bye.
 The sample session demonstrates the evaluation of a deterministic example,
 namely the |last| function,
 and nondeterministic examples with logic variables.
-In the latter case, evaluation has more than one results,
+In the latter case, evaluation has more than one result,
 and all of them are displayed.
 The use of \verb!:get! shows the default strategy and search depth limit.
 Afterwards, the latter is set to 3 with the \verb!:set! command.

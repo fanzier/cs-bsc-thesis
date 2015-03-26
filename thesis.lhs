@@ -125,7 +125,7 @@ In this thesis, I will give a detailed exposition of the two languages.
 Moreover, I will document
 the implementation of an operational semantics for \cumin{}
 and of a translation algorithm
-that transforms \cumin{} programs to equivalent \salt{} programs.
+that transforms \cumin{} programs into equivalent \salt{} programs.
 I will describe how the generated \salt{} code can be simplified
 and how it can be used to analyze
 the nondeterminism in the original \cumin{} program.

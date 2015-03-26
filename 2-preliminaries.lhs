@@ -201,7 +201,7 @@ these more intricate rules are necessary.
 \BinaryInfC{|Gamma ||- isData (A (vec tau_l))|}
 \DisplayProof
 \\[1em]
-\AxiomC{$\left(|(vec (Gamma, dataIdx A I, ((vec alpha_l))<:l `elem` I:>, ((vec (isData alpha_l)))<:l `elem` I:> ||- isData tau_mn)|\right)_{mn_m}$}
+\AxiomC{$\left(|(vec (Gamma, dataIdx A I, (vec alpha_l), ((vec (isData alpha_l)))<:l `elem` I:> ||- isData tau_mn)|\right)_{mn_m}$}
 \UnaryInfC{|Gamma ||- dataIdx A I|}
 \DisplayProof
 \quad\text{where |data A (vec alpha_l) = vec (C_m (vec tau_mn))|}
@@ -298,7 +298,7 @@ After all, checking whether two functions are equal is undecidable in general.
 As usual, the operator |+| binds more tightly than |==|.
 The former associates to the left and the latter is not associative.
 Parentheses can be used for structuring expressions.
-|failed| signifies that the computation does not yield a result.
+The keyword |failed| signifies that the computation does not yield a result.
 It can be used to \enquote{cut off} unwanted computation branches.
 Let bindings allow
 using the result of a computation more than once in an expression
@@ -362,7 +362,7 @@ that we decided to put them in a so-called \emph{prelude},
 which is copied to the top of every program.
 It defines data types like lists and booleans,
 as well as functions that operate on them.
-The precise definitions of the prelude are listed in \cref{cumin-prelude}.
+The types of the definitions of the prelude are listed in \cref{cumin-prelude}.
 
 \begin{figure}[t]
 > data Pair a b = Pair a b
@@ -544,8 +544,7 @@ The missing subderivations look like this.
 The syntax of \salt{} is quite similar to \cumin{} (\cref{salt-exp}).
 However, it replaces the |let .. free| construct
 with the keyword |unknown<:tau:>!|,
-which represents the set of values of the type |tau|,
-which has to be a |Data| type.
+which represents the set of values of the |Data| type |tau|.
 As mentioned in the introduction,
 other primitives for sets are
 |set| for creating singleton sets
@@ -571,7 +570,7 @@ Hence, function definitions are simpler than in \cumin{}.
 The \salt{} syntax deviates slightly from \cite{orig}, as well.
 Except for the |let .. free| construct,
 the modifications of \cumin{} also apply to \salt{}.
-Additionally, the |anything| primitive from the original paper
+Additionally, the $\textbf{\text{anything}}$ primitive from the original paper
 is renamed to |unknown|.
 Furthermore, the syntax for indexed unions is different.
 The original paper writes $|e_1| \ni |x| \bigcup |e_2|$
@@ -602,7 +601,7 @@ Mathematical notation & plain text \\
 
 As for \cumin{}, we created a \salt{} prelude with useful definitions.
 It is mainly a manual translation of the \cumin{} prelude.
-There are only two changes.
+There are only two major differences.
 > choose :: forall a. Set a -> Set a -> Set a
 > sMap :: forall a b. (a -> b) -> Set a -> Set b
 The \salt{} version of |choose| operates on sets
@@ -666,19 +665,19 @@ It is instructive to translate the above \cumin{} programs to \salt{}.
 >   Nil        -> Nil<:b:>
 >   Cons y ys  -> Cons<:b:> (f y) (map<:a,b:> f ys)
 Proving that |choose| is well-typed works similarly as above.
-Let |Gamma := a, x :: a, y :: a| and |Gamma' := Gamma, c :: Bool|.
+Let |Gamma := a, x :: Set a, y :: Set a| and |Gamma' := Gamma, c :: Bool|.
 \begin{prooftree}
       \AxiomC{|..|}
     \UnaryInfC{|Gamma ||- isData Bool|}
   \UnaryInfC{|Gamma ||- unknown<:Bool:> :: Set Bool|}
       \AxiomC{|Gamma' ||- c :: Bool|}
-      \AxiomC{|Gamma' ||- set x :: Set a|}
-      \AxiomC{|Gamma' ||- set y :: Set a|}
-    \TrinaryInfC{|Gamma' ||- case c of { True -> set x; False -> set y } :: Set a|}
+      \AxiomC{|Gamma' ||- x :: Set a|}
+      \AxiomC{|Gamma' ||- y :: Set a|}
+    \TrinaryInfC{|Gamma' ||- case c of { True -> x; False -> y } :: Set a|}
   \UnaryInfC{|Gamma ||- \c :: Bool -> case c of { .. } :: Bool -> Set a|}
 \BinaryInfC{|Gamma ||- unknown<:Bool:> >>= \c :: Bool -> case c of { .. } :: Set a|}
-\UnaryInfC{|a, x :: a ||- \y :: a -> unknown<:Bool:> >>= \c :: Bool -> case c of { .. } :: a -> Set a|}
-\UnaryInfC{|a ||- \x :: a -> \y :: a -> unknown<:Bool:> >>= \c :: Bool -> case c of { .. } :: a -> a -> Set a|}
+\UnaryInfC{|a, x :: Set a ||- \y :: Set a -> unknown<:Bool:> >>= \c :: Bool -> case c of { .. } :: Set a -> Set a|}
+\UnaryInfC{|a ||- \x :: Set a -> \y :: Set a -> unknown<:Bool:> >>= \c :: Bool -> case c of { .. } :: Set a -> Set a -> Set a|}
 \end{prooftree}
 
 The proof of well-typedness of |map| very similar to the one in \cumin{},
@@ -847,7 +846,7 @@ a type error is reported.
 
 The only thing that deserves a special remark is the inference of |Data| types.
 The inference of the |dataIdx A I| judgments is done once,
-at the beginning of type checking and the result is stored.
+at the beginning of type checking, and the result is stored.
 Closely following the typing rules
 to determine the index set $I$ of type variables
 that need to be |Data| types would be inefficient

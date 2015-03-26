@@ -6,7 +6,7 @@ On the other hand,
 this makes it harder to analyze
 whether a function is actually deterministic.
 For that reason,
-\salt{} was introduced in \cite{orig}.
+\salt{} was introduced in~\cite{orig}.
 In \salt{},
 every expression that may assume multiple values
 must be set typed.
@@ -85,7 +85,7 @@ The conversion function is denoted by |trans|.
 \begin{align*}
 \trans{|x|} &= |set x| \qquad \text{where |x| is a variable} \\
 \trans{|n|} &= |set n| \qquad \text{where |n| is a literal} \\
-\trans{|C<:vec rho_m:>!|} &= |set (\x_1 :: tytrans tau'_1 -> .. set (\x_n :: tytrans tau'_n -> C<:vec (tytrans rho_m):> x_1 .. x_n))| \\*
+\trans{|C<:vec rho_m:>!|} &= |set (\x_1 :: tytrans tau'_1 -> .. set (\x_n :: tytrans tau'_n -> C<:vec (tytrans rho_m):> x_1 .. x_n) ..)| \\*
 &\qquad\text{for every |data A (vec alpha_m) = .. || C tau_1 .. tau_n || ..| in \cumin{}} \\*
 &\qquad\text{and where |tau'_i = tau_i[vec (rho_m/alpha_m)]|.} \\
 \trans{|failed<:tau:>!|} &= |set (failed<:tytrans tau:>!)| \\
@@ -102,7 +102,7 @@ The conversion function is denoted by |trans|.
 \trans{|case e of { p_1 -> e_1; .. }|} &= |trans e >>= \x :: tau -> case x of { p_1 -> trans e_1; .. }| \\*
 &\qquad \text{where |trans e :: Set tau| and |x| is a fresh variable.}
 \end{align*}
-\caption{Translation rule for expressions}
+\caption{Translation rules for expressions}
 \label{trans-exp}
 \hrulefill
 \end{figure}
@@ -121,8 +121,8 @@ acting on them.
 For example |1 + 1| will be translated to
 > set 1 >>= \x :: Nat -> set 1 >>= \y :: Nat -> set (x + y)
 Needless to say,
-this translation is rather naive and not very efficient --
-it could simply be translated to |{1 + 1}|.
+this translation is rather naive and not very efficient
+as it could simply be translated to |{1 + 1}|.
 We will address this problem later.
 
 The rules in \cref{trans-exp} are taken from \cite{orig}
@@ -147,7 +147,7 @@ on the right hand side of the function definition.
 
 Such a function is translated to the following \salt{} function.
 > f :: forall alpha_1 .. alpha_m. Set (tytrans (tau_1 -> .. -> tau_n -> tau))
-> f = set (\x_1 :: tytrans tau_1 -> set (.. set (\x_n :: tytrans tau_n -> trans e)))
+> f = set (\x_1 :: tytrans tau_1 -> .. set (\x_n :: tytrans tau_n -> trans e) ..)
 Note that we now have to use explicit lambda abstractions
 (which do not even exist in \cumin{})
 because each (sub-)function needs to be wrapped in |set|-braces.
@@ -410,9 +410,9 @@ by the next binding up the syntax tree.
 it is not directly bound by the next parent binding.
 But it may be bound at higher levels in the syntax tree.
 
-For illustration purposes, consider the following expression type:
+For illustration purposes, consider the following data type for lambda abstractions:
 > data Exp v = Var v | Lam (Scope () Exp v)
-|v| is the variable type of the expression.
+Here, |v| is the variable type of the expression.
 |Scope| is provided by the \verb!bound! library and represents a binder.
 The general form is
 > data Scope b f a = Scope (f (Var b (f a)))
@@ -423,7 +423,7 @@ and |a| stands for the type of free variables,
 not bound in this scope.
 For example, the expression |\x -> \y -> x| would be represented as
 > Lam (Scope (Lam (Scope (Var (F (Var (B ())))))))
-|F| \enquote{lifts} the bound variable |B ()| one level up,
+where |F| \enquote{lifts} the bound variable |B ()| one level up,
 so it is bound by the outer lambda abstraction instead of the inner one.
 For lack of space, I cannot give a longer introduction to the library.
 But I want to highlight some of its advantages.
@@ -555,7 +555,7 @@ subtracting two Peano numbers, using a logic variable,
 \item
 dividing two Peano numbers, using a logic variable,
 \item
-computing the last element of a seven-element list with logic variables and
+computing the last element of a seven-element list of booleans, using logic variables, and
 \item
 sorting a four-element list of Peano numbers by trying all permutations.
 \end{itemize}
