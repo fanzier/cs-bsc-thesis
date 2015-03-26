@@ -9,13 +9,13 @@ For that reason,
 \salt{} was introduced in \cite{orig}.
 In \salt{},
 every expression that may assume multiple values
-must have set type |Set|.
+must be set typed.
 
 \section{The Translation Rules}
 
-The translation method below is an adaption of \cite{orig}.
-The version presented here is different
-because the languages \cumin{} and \salt{} are more general:
+The translation method below is based on \cite{orig}.
+It had to be adapted
+because our versions of the languages \cumin{} and \salt{} are more general:
 Constructors do not have to be fully applied,
 there are more ADTs than |List|, |Bool| and |Pair|,
 and the syntax for indexed unions is more general.
@@ -24,8 +24,8 @@ in contrast to \cite{orig}
 where the transformation is purely syntactical.
 
 The translation method is pessimistic insofar
-as it transforms every \cumin{} expressions
-into a set-typed expressions
+as it transforms every \cumin{} expression
+into a set-typed expression
 even if it is deterministic.
 This shortcoming will be partly addressed in \cref{sec:simplifications}.
 
@@ -33,7 +33,7 @@ This shortcoming will be partly addressed in \cref{sec:simplifications}.
 
 Every \cumin{} expression of type |tau|
 is translated to a \salt{} expression of type |set (tytrans tau)|
-where |tytrans| inserts |Set| to the right of every |->| arrow (\cref{trans-types}).
+where |tytrans| inserts |Set| to the right of every function arrow (\cref{trans-types}).
 \begin{figure}[t]
 \begin{align*}
 |tytrans Nat| &= |Nat| \\
@@ -49,11 +49,11 @@ For example,
 a \cumin{} expression |f| of type |(Nat -> Bool) -> Nat| will be translated to
 a \salt{} expression of type |Set ((Nat -> Set Bool) -> Set Nat)|.
 The reason for the outer |Set| is
-that the |f| itself may be nondeterministic,
-\ie it might represent multiple functions;
-for the |Set| in the argument
-that |f| may be given a nondeterministic function as an argument;
-and for the remaining |Set|
+that |f| itself may be nondeterministic,
+\ie it might represent multiple functions.
+The |Set| braces in the argument are
+because |f| may be given a nondeterministic function as an argument.
+The remaining |Set| is explained by the fact
 that |f| may compute more than one natural number.
 
 \subsection{Translating Data Declarations}
@@ -63,7 +63,7 @@ we have to translate data type declarations.
 Recall that an ADT declaration in \cumin{} looks like this.
 > data A alpha_1 .. alpha_m =  C_1 tau_11 tau_12 .. |  C_2 tau_21 tau_22 .. |  ..
 Here, |C_1, C_2 ..| are the constructors
-and the |tau|'s their argument types.
+and |tau_11, tau_12 ..| are their argument types.
 It will be translated to the following \salt{} ADT declaration.
 > data A alpha_1 .. alpha_m =  C_1 (tytrans tau_11) (tytrans tau_12) .. |  C_2 (tytrans tau_21) (tytrans tau_22) .. |  ..
 
@@ -72,7 +72,7 @@ As an example, consider difference lists.
 This is translated to the following \salt{} declaration.
 > data DList alpha = DList (List alpha -> Set (List alpha))
 
-Such higher order data structures are rather rare, however.
+Such data structures are rather rare, however.
 Most of the time,
 the data declarations will contain no function types
 and the translation to \salt{} will look the same.
@@ -109,7 +109,7 @@ The conversion function is denoted by |trans|.
 As mentioned before,
 an expression of type |tau| is translated to one of type |Set (tytrans tau)|.
 This is achieved by adding sufficiently many |Set| in the right places
-(cf. the first four rules).
+(\cf the first four rules).
 |unknown| already has |Set|-type in \salt{},
 so it does not need extra |set|-braces.
 
@@ -117,7 +117,7 @@ The other translation rules handle expressions composed of subexpressions.
 They generally work by
 translating these subexpressions,
 \enquote{extracting} the elements using |>>=| and
-acting on these.
+acting on them.
 For example |1 + 1| will be translated to
 > set 1 >>= \x :: Nat -> set 1 >>= \y :: Nat -> set (x + y)
 Needless to say,
@@ -125,13 +125,13 @@ this translation is rather naive and not very efficient --
 it could simply be translated to |{1 + 1}|.
 We will address this problem later.
 
-Most of the rules in \cref{trans-exp} are taken from \cite{orig}
+The rules in \cref{trans-exp} are taken from \cite{orig}
 with mostly small modifications
 because of the differences in syntax and generality of ADTs.
 However, the translation of constructors had to be generalized
-because they in our version of \cumin{},
+because in our version of \cumin{},
 they are allowed to be partially applied.
-Therefore, they are translated similar to regular \cumin{} functions,
+Therefore, they are translated similarly to regular \cumin{} functions,
 which are discussed in the next section,
 namely by wrapping each \enquote{level} in singleton sets.
 
@@ -149,12 +149,14 @@ Such a function is translated to the following \salt{} function.
 > f :: forall alpha_1 .. alpha_m. Set (tytrans (tau_1 -> .. -> tau_n -> tau))
 > f = set (\x_1 :: tytrans tau_1 -> set (.. set (\x_n :: tytrans tau_n -> trans e)))
 Note that we now have to use explicit lambda abstractions
-(which did not even exist in \cumin{})
+(which do not even exist in \cumin{})
 because each (sub-)function needs to be wrapped in |set|-braces.
 
 \subsection{Examples}
 
-Some example translations can be seen below.\\[.5cm]
+Some example translations can be seen below.
+The original \cumin{} functions are on the left
+and their translated \salt{} counterparts on the right-hand side.\\[.5cm]
 \begin{minipage}{.39\textwidth}%
 \texths\small%
 \begin{code}
@@ -211,14 +213,13 @@ length = {\xs :: List a -> {xs} >>=
   }
 \end{code}
 \end{minipage}
-\\[.5cm]
 
 \section{Improving the Generated \salt{} Code}
 \label{sec:simplifications}
 
 As one can see in the example programs,
 the translated expressions are often unnecessarily set-typed,
-so there is a lot of \enquote{plumbing} with |set| and |>>=| required.
+requiring a lot of \enquote{plumbing} with |set| and |>>=|.
 However, there are some simple transformations
 that can be used to make the \salt{} code much more efficient.
 
@@ -249,7 +250,7 @@ In contrast to $\beta$-reduction,
 this transformation is always safe and beneficial.
 Note that while $\eta$-reduction is not valid for \cumin{} (\cf \cref{sec:pecularities}),
 it is allowed in \salt{}
-because there is no nondeterminism or call-time choice.
+because there is no implicit nondeterminism or call-time choice.
 
 It was mentioned before
 that the set type constructor |Set| forms a monad,
@@ -262,7 +263,7 @@ To give some intuition, I also state the laws using set notation.
   $\bigcup_{|y| \in \left(\bigcup_{|x| \in |e|} |(f x)|\right)} |(g y)| \cong \bigcup_{|x| \in |e|} \left(\bigcup_{|y| \in |(f x)|} |(g y)|\right)$
 \end{enumerate}
 The symbol |~=| denotes \emph{semantic equivalence},
-which means that the evaluate to the same result,
+which means that two expressions evaluate to the same result,
 and is formally defined in \cite{orig}.
 For lack of space, I cannot develop this theoretical background,
 which is necessary to prove these laws.
@@ -294,7 +295,7 @@ However, it can be used to \enquote{re-associate} |>>=|-bindings,
 thus enabling the application of the first rule in some cases.
 For instance, consider the expression |(x >>= \y -> { f }) >>= \g -> g y|.
 At first sight, neither the first nor the second law can be applied.
-The third monad law allows as to transform this into
+However, the third monad law allows us to transform this into
 |x >>= \y -> ({ f } >>= \g -> g y)|.
 Now, the first monad law is applicable and yields
 |x >>= \y -> f y| after $\beta$-reduction.
@@ -310,7 +311,7 @@ trans (Cons<:Nat:> coin Nil<:Nat:>!)
 ~= (coin >>= \c :: Nat -> { \xs :: List Nat -> { Cons<:Nat:> c xs } })
   >>= \f :: (List Nat -> Set (List Nat)) -> f Nil<:Nat:>
 \end{code}
-Applying the third monad enables the first monad law and $\beta$-reduction:
+Applying the third monad law enables the first monad law and $\beta$-reduction:
 \begin{code}
 coin >>= \c :: Nat ->
   ({ \xs :: List Nat -> { Cons<:Nat:> c xs } }
@@ -319,12 +320,12 @@ coin >>= \c :: Nat ->
   (\xs :: List Nat -> { Cons<:Nat:> c xs }) Nil<:Nat:>
 ~= coin >>= \c :: Nat -> { Cons<:Nat:> c Nil<:Nat:> }
 \end{code}
-As a simplification, one can limit oneself
+In general, we can limit ourselves
 to only ever applying the third monad law from left to right.
 This is because the first monad law can be used much more often
 than the second one, and it benefits only from this direction.
 In the example programs I looked at,
-the other direction was never beneficial.
+applying the third monad law from right to left was never useful.
 
 As a larger example,
 let us look at how the simplifications transform the prelude function |length|.
@@ -358,16 +359,16 @@ length = { \xs :: List a -> case xs of
 \\[.5cm]
 This is a considerable improvement.
 There is only one thing that could be done better in a manual translation,
-by exploiting the fact that the function is in fact deterministic,
+by exploiting the fact that the function is actually deterministic,
 which is discussed in \cref{sec:nda-rec} by means of the same example.
 
 \section{Implementation}
 \label{sec:trans-implementation}
 
 The implementation is relatively close to the translation
-and simplification rules described above.
-The program recursively traverses the syntax tree and applies them.
-I will now explain some implementation details.
+and simplification method described above.
+The program recursively traverses the syntax tree and applies these rules.
+In the following, I will explain some implementation details.
 An overview of the implementation is given afterwards.
 
 While the translation given in \cite{orig} is purely syntactical,
@@ -392,7 +393,7 @@ This is rather complicated and relatively hard to get right.
 I chose the following different solution:
 I used a nameless representation of terms,
 where variables are not identified by names
-but by \enquote{how many levels up the syntax tree they were bound}.
+but by \enquote{how many levels up the syntax tree} they were bound.
 This is made precise below.
 
 \subsection{Nameless Representation}
@@ -416,15 +417,14 @@ For illustration purposes, consider the following expression type:
 The general form is
 > data Scope b f a = Scope (f (Var b (f a)))
 where |b| represents additional information for bound variables,
-in this case none, \ie |()|;
-|f| represents the expression type
-and |a| the type of free variables,
-not bound in this scope;
-and |a| represents the type of free variables in the binder.
+in this case none, represented by the unit type |()|;
+|f| represents the expression type;
+and |a| stands for the type of free variables,
+not bound in this scope.
 For example, the expression |\x -> \y -> x| would be represented as
 > Lam (Scope (Lam (Scope (Var (F (Var (B ())))))))
 |F| \enquote{lifts} the bound variable |B ()| one level up,
-so it is bound by the outer lambda instead of the inner one.
+so it is bound by the outer lambda abstraction instead of the inner one.
 For lack of space, I cannot give a longer introduction to the library.
 But I want to highlight some of its advantages.
 
@@ -440,14 +440,14 @@ since they have to be closed terms.
 Furthermore, lots of mistakes when handling variables
 can be caught at compile time.
 The reason is that
-blunders like forgetting a binder lead to type errors in the Haskell code
+many bugs, such as forgetting a binder, lead to type errors in the Haskell code
 because the variable types do not match up.
 
 \subsection{General Approach}
 
 I implemented  the translation method as a program called \verb!cumin2salt!.
 On execution, it is passed a \cumin{} program to translate,
-and whether the result should be simplified.
+and a flag indicating whether the result should be simplified.
 My implementation proceeds as follows.
 
 The \cumin{} program is parsed and
@@ -456,11 +456,11 @@ If there were no errors, it is translated to the nameless representation.
 This one, in turn, is transformed to a nameless \salt{} representation,
 following the translation rules.
 If desired by the user,
-the simplifications $\beta$-reduction, $\eta$-reduction and the monad laws
-are used to improve the generated \salt{} code.
-This nameless \salt{} AST is then translated to a regular \salt{} AST.
-This is done by giving names to the bound variables.
-To guarantee these are unique, each one gets a unique number.
+the generated \salt{} code is simplified
+using $\beta$-reduction, $\eta$-reduction and the monad laws.
+This nameless \salt{} AST is then translated to a regular \salt{} AST,
+by giving names to the bound variables.
+In order to guarantee uniqueness, a different number is appended to each one.
 Note that only one renaming pass over the AST is necessary,
 everything before is handled by the nameless representation.
 Also, the original variable names are still retained if possible
@@ -478,16 +478,16 @@ a \salt{} output file name (default: \verb!Out.salt!).
 If the \salt{} output should be simplified,
 one should pass the option \verb!-s!.
 The switch \verb!--with-prelude! controls
-whether the prelude functions should be included in the output.
+whether the prelude functions should be part of the output.
 Normally, the translated prelude functions need not be included,
-as they are provided by the alternative \salt{} prelude (cf. Chapter 2.4).
+as they are provided by the alternative \salt{} prelude (\cf \cref{sec:salt}).
 Of course, \verb!--help! can be used to show a help text.
 
 \subsection{Example}
 
-As an example output,
+As an exemplary output,
 consider the following automatic translation of the |length| function,
-with simplifications enabled.
+with simplifications applied.
 \begin{code}
 length :: forall a. Set (List a -> Set Nat)
 length = {\xxs_56 :: List a -> case xxs_56 of
@@ -496,7 +496,7 @@ length = {\xxs_56 :: List a -> case xxs_56 of
                                            -> Set Nat) -> arg_59 xs_58 >>=
       (\primOpArg_60 :: Nat -> {1 + primOpArg_60}))}
 \end{code}
-As can be seen, numbers are appended to variable names
+As one can see, numbers are appended to variable names
 to make them unique.
 Apart from that, this output matches the manual translation seen above.
 
@@ -504,14 +504,12 @@ Apart from that, this output matches the manual translation seen above.
 
 To ensure correctness of the translation program,
 I took the following measures:
-First, type checking \cumin{} and \salt{} programs
-is a very useful consistency check.
 After every simplification, it is checked that the type did not change.
 Additionally, after the whole translation,
 it is checked that the \salt{} functions have the right types,
 namely that a \cumin{} function of type |tau|
 is translated to a \salt{} function of type |Set (tytrans tau)|.
-This catches a large class of bugs.
+This is a useful consistency check and catches a large class of bugs.
 
 Testing is still necessary, of course.
 The implementation of denotational semantics for \cumin{} and \salt{}
@@ -531,7 +529,7 @@ and thus works as intended.
 \subsection{Simplifications and Performance}
 
 While the main reason for studying the translation to \salt{}
-and the simplifications is
+and the simplifications was
 to analyze the non-determinism in a \cumin{} program (next chapter),
 it is still interesting
 to measure the effects of the simplifications
@@ -548,11 +546,19 @@ In each version, the test expressions were evaluated to reduced normal form,
 using the implementation of the semantics for \salt{} by Fabian Thorand.
 Only the first fully evaluated result was computed with BFS.
 The benchmarks were the following:
-adding two natural numbers in Peano representation;
-subtracting them;
-dividing them;
-computing the last element of a seven-element list with logic variables;
-and sorting a four-element list of Peano numbers by trying all permutations.
+\begin{itemize}
+\item
+adding two natural numbers in Peano representation,
+which is completely deterministic,
+\item
+subtracting two Peano numbers, using a logic variable,
+\item
+dividing two Peano numbers, using a logic variable,
+\item
+computing the last element of a seven-element list with logic variables and
+\item
+sorting a four-element list of Peano numbers by trying all permutations.
+\end{itemize}
 The results are shown in \cref{perf-simpl}.
 \begin{figure}[t]
 \centering
@@ -565,7 +571,7 @@ Peano division & 570\,ms & 270\,ms \\
 Last & 96\,ms & 47\,ms \\
 Permutation sort & 44\,ms & 15\,ms
 \end{tabular}
-\caption{Average running times for (un-)optimized \salt{} code}
+\caption{Average running times for \salt{} code with and without simplifications}
 \label{perf-simpl}
 \hrulefill
 \end{figure}

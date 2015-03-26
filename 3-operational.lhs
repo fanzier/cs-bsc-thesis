@@ -66,9 +66,9 @@ Coming from Haskell,
 it will also be surprising that |maybeDouble1| and |maybeDouble2|
 are \emph{not} equivalent.
 This shows that $\eta$-equivalence
-does not in general hold for \cumin{} (and Curry).
+does not generally hold for \cumin{} (and Curry).
 The difference between these two functions can only be observed
-when they are used as a higher order function argument:
+when they are used as a higher-order function argument:
 The expression |map<:Nat,Nat:> maybeDouble1 [1,3]<:Nat:>!|
 evaluates to |[1,3]<:Nat:>!| or |[2,6]<:Nat:>!|.
 This is because when |map| is called,
@@ -103,7 +103,7 @@ It is written by juxtaposition: |Delta Delta'|.
 \end{definition}
 
 Every expression will be associated with a corresponding heap
-that binds (at least) all the variables in the expression.
+that binds (at least) all the variables contained in the expression.
 
 \begin{definition}[Heap Expression Pair]
 A \emph{heap expression pair} |Delta : e| is
@@ -120,7 +120,7 @@ without a given heap.
 In this case, we simply evaluate the heap expression pair |[] : e|.
 When talking about evaluation,
 one has to specify
-when an expression is called evaluated.
+when an expression is called \emph{evaluated}.
 The following three notions will be useful:
 
 \begin{definition}[Normal Forms]
@@ -167,12 +167,10 @@ which evaluates to values,
 denoted by |~>|,
 which evaluates to flat normal form.
 \item \emph{Evaluation to reduced normal form},
-denoted by |~>!|.
-This is sometimes also called \enquote{forcing}.
+denoted by |~>!| and sometimes also called \enquote{forcing}.
 \end{enumerate}
 
-How can these normal forms be obtained?
-This is done using the rules shown in
+These normal forms can be obtained by using the rules shown in
 \cref{logical-eval,functional-eval,force-eval}.
 \begin{figure}[p!]
 \begin{tabularx}{\textwidth}{r >{\setstretch{1.8}}X}
@@ -320,13 +318,13 @@ and where |vec y_n| are fresh variables
 \hrulefill
 \end{figure}
 Like the typing rules,
-the evaluation rules are with respect to a given \cumin{} program.
+the evaluation rules are implicitly indexed by a given \cumin{} program.
 This is again omitted from the notation for the sake of readability.
 Another technicality to discuss is related to substitution:
 A variable is called \emph{fresh} if its name does not occur
 in the relevant expression or the \cumin{} program.
 Since we only ever substitute with fresh variables in the evaluation rules,
-variable capture (cf. \cref{sec:ast}) cannot happen.
+variable capture (\cf \cref{sec:ast}) cannot happen.
 
 \section{Explanation of the Semantics}
 \label{sec:op-sem-explanation}
@@ -348,7 +346,7 @@ A trivial example is |failed<:tau:>!|,
 which simply has no applicable reduction rule.
 This makes sense
 because this expression denotes failure.
-Having cleared this up,
+Having clarified that,
 let us take a look at the individual rules of logical evaluation.
 \begin{itemize}
 \item \textbf{Val.}
@@ -369,14 +367,14 @@ it does not need to be evaluated further.
   \item \textbf{Let.}
   To evaluate a |let| binding,
   the bound variable and expression are added to the heap
-  and the rest of the expression is evaluated.
+  and the body is evaluated.
   The variable has to be replaced by a fresh name
   so that it will not shadow other heap variables.
   Note that the evaluation of the bound expression is deferred
   until it is needed (Lookup).
   This is \emph{lazy evaluation}.
   \item \textbf{Free.}
-  Evaluating |let .. free| bindings work completely analogously.
+  Evaluating |let .. free| bindings work analogously.
   \end{itemize}
 \item \textbf{Function application.}
 There are three rules governing function application.
@@ -624,8 +622,8 @@ yields the other evaluation |[] : coin ~>* Delta[c' /-> True] : 1|.
 \subsection{Call-time Choice}
 
 In the introduction of this chapter,
-we discussed the examples |coin + coin| vs.\ |let c = coin in c + c|.
-Let us find out how the difference manifests itself.
+we discussed the examples |coin + coin| and |let c = coin in c + c|.
+Let us find out how the difference between them manifests itself.
 \begin{prooftree}
     \AxiomC{\dots}
     \UnaryInfC{|[] : coin ~>* Delta : i|}
@@ -640,7 +638,7 @@ Let us find out how the difference manifests itself.
 \end{prooftree}
 This derivation works for all $i = 0, 1$ and $j = 0, 1$.
 Thus, the possible results are 0, 1 and 2.
-By contrast, consider the derivation for |let c = coin in c + c|.
+In contrast, consider the derivation for |let c = coin in c + c|.
 \begin{prooftree}
     \AxiomC{\dots}
     \UnaryInfC{|[c' /-> coin] : coin ~> Delta[c' /-> i] : i|}
@@ -729,21 +727,21 @@ As we have seen in the previous section,
 trees are a natural representation for this.
 
 The implementation of the semantics is thus split into two components:
-actual evaluation of an expression,
-which generates such an evaluation tree,
-and traversing this tree,
+the actual evaluation of an expression,
+which generates such an evaluation tree;
+and the traversal of this tree,
 for example using depth-first or breadth-first search.
 This may sound inefficient at first,
 as only parts of the generated tree may actually be needed.
 However, since Haskell is a lazy language,
-the tree is generated on demand only,
+the tree is generated on demand,
 while being traversed.
 In this way, laziness allows decoupling evaluation and search.
 
 \subsection{Evaluation}
 
 Before explaining the actual implementation,
-I have to talk about how the various objects and normal forms
+I have to describe how the various objects and normal forms
 where modeled as data types.
 
 A heap is represented as a standard map data structure (Data.Map)
@@ -760,8 +758,8 @@ data Value
   | Logic VarName Type
 \end{code}
 Furthermore, there are (among others) the following evaluation functions.
-> evaluateFunctionally :: Exp -> EvalT TreeM FNF
-> evaluateLogically :: Exp -> EvalT TreeM Value
+> evaluateFunctionally  :: Exp -> EvalT TreeM FNF
+> evaluateLogically     :: Exp -> EvalT TreeM Value
 These functions accept a \cumin{} expression
 and produce a tree with all possible results at the leaves,
 flat normal forms and values, respectively.
@@ -787,12 +785,12 @@ which is increased afterwards,
 hence ensuring that all generated variables are unique.
 Avoiding variable capture on substitution (\cf \cref{sec:ast})
 has to be taken care of as well.
-In this case, however, it cannot happen
+In this case, however, it is not an issue
 since one only ever substitutes fresh variables for existing ones.
 
 In most cases, the shape of an expression determines
-the next evaluation rule to apply,
-for instance, if it is an addition,
+the next evaluation rule to apply.
+For instance, if it is an addition,
 only the Plus rule can be applied.
 In other cases, like in case expressions or equality tests,
 parts of the expression have to be evaluated,
@@ -804,11 +802,11 @@ The only remaining case is function application.
 The rules Fun, Apply, Flatten can be employed
 and there may be more than one choice.
 The implementation uses the following strategy:
-Apply the Fun rule first, whenever possible.
-If not, try the Apply rule.
-In case none of those worked,
-use the Flatten rule.
-This strategy always makes progress (cf. \cref{sec:op-sem-explanation}).
+It applies the Fun rule first, whenever possible.
+If not, it tries the Apply rule.
+In case this also had no effect,
+it uses the Flatten rule.
+This strategy always makes progress (\cf \cref{sec:op-sem-explanation}).
 
 All in all, logical evaluation proceeds like this:
 It checks whether the expression is already a value,
@@ -818,7 +816,7 @@ apply a suitable rule according to the details
 in the previous paragraph.
 Functional evaluation invokes logical evaluation first.
 If the result is already in flat normal form,
-nothing is to be done (FNF rule).
+nothing has to be done (FNF rule).
 Otherwise, the result is a logic variable
 which results in a branching of the evaluation tree,
 one new branch for each applicable Guess rule.
@@ -839,7 +837,7 @@ One could simply generate them in a tree like this:
 \end{center}
 The disadvantage is that breadth-first search will not
 find all solutions on such a tree
-since it contains a node with infinitely many children.
+since it contains a node with infinitely many direct children.
 As completeness of BFS is desirable,
 the program will instead generate a tree
 with only finitely many nodes on each level,
@@ -875,8 +873,8 @@ It can be made a monad\footnote{
 In fact, this type constructor represents
 the free monad over the list functor.},
 \ie there are two functions |return :: a -> Tree a|
-and |(>>=) :: Tree a -> (a -> Tree b) -> Tree b|,
-where the former simply creates a leaf
+and |(>>=) :: Tree a -> (a -> Tree b) -> Tree b|.
+The former simply creates a leaf
 and the bind operation |>>=| performs substitution on the leaves.
 The operation that is important for nondeterminism is given by the function
 > branch :: [a] -> Tree a
@@ -885,7 +883,7 @@ which creates a tree with the given leaves.
 Failure is represented by a tree without leaves:
 > failure :: Tree a
 > failure = branch []
-To better understand how these functions work,
+In order to better understand how these functions work,
 consider the following code sample.
 > branch [0,10] >>= \x -> branch [1,2,3] >>= \y -> return (x + y)
 There is special notation for |>>=| in Haskell,
@@ -916,7 +914,7 @@ namely the substitution of trees.
 However, this tree structure performed rather badly.
 Profiling the application revealed
 that most of the time was spent performing substitution on the tree.
-This takes a lot of time for high trees
+This takes a lot of time for deep trees
 since it has to be traversed completely to get to the leaves.
 This problem turns out to be well-known \cite{codensity}.
 The solution is called the \emph{codensity transformation}.
@@ -950,8 +948,8 @@ can be found in \cref{sec:op-sem-assessment}.
 It was mentioned before that the monad |EvalT TreeM|
 combines the nondeterministic effects of trees
 with the stateful effects of the |EvalT| monad transformer.
-How convenient this is in practice,
-can be seen at the implementation of the Guess rule for natural numbers.
+The implementation of the Guess rule for natural numbers
+demonstrates such a usage.
 The part of the function that generates the evaluation tree
 for a logic variable |v| is given below in a slightly simplified form.
 \begin{code}
@@ -1103,14 +1101,14 @@ that can be selected using the up and down keys.
 \subsection{Testing}
 
 In order to verify the correctness of the interpreter,
-I created a test-suite, called \verb!cumin-test!, in the implementation.
+I created a test-suite called \verb!cumin-test! in the implementation.
 It performs two kinds of checks:
 First, it evaluates certain test expressions to reduced normal form,
 and compares them with the corresponding expected results.
 As a second check, I used a denotational semantics for \cumin{},
 implemented by Fabian Thorand in his bachelor thesis.
-The test expressions are also evaluated using this semantics,
-and it is checked whether the results match the operational one.
+The test expressions are also evaluated using this implementation,
+and it is checked whether the results agree with the operational semantics.
 
 \section{Assessment of the Search Strategies}
 \label{sec:op-sem-assessment}
@@ -1123,23 +1121,31 @@ to evaluate certain nondeterministic expressions
 to reduced normal form
 using breadth-first search or depth-first search, respectively.
 The test expressions were the following:
-Subtracting two numbers in Peano representation
-using a free variable and addition;
-dividing two Peano numbers using a free variable and multiplication;
+\begin{itemize}
+\item
+subtracting two natural numbers in Peano representation\footnote{
+A Peano number is either zero or represented as the successor of another Peano number: |data Peano = Zero || Succ Peano|.}
+using a free variable and addition,
+\item
+dividing two Peano numbers using a free variable and multiplication,
+\item
 finding the last element of a 20-element list of boolean values,
-as shown in the introduction;
-sorting a four-element list of Peano numbers by trying all permutations;
-subtracting two primitive natural numbers using a logic variable and addition;
-and multiplying two primitive natural numbers $m,n$
+as shown in the introduction,
+\item
+sorting a four-element list of Peano numbers by trying all permutations,
+\item
+subtracting two primitive natural numbers using a logic variable and addition and
+\item
+multiplying two primitive natural numbers $m,n$
 in terms of subtraction: $mn = n + (m-1)n$.
+\end{itemize}
 For the last two test cases, evaluation was stopped
 as soon as the first solution was found.
 In the other cases, the evaluation tree had to be searched exhaustively.
 
 To determine the execution times (wall-clock time),
-the benchmarking library \verb!criterion!\footnote{
-\url{http://http://hackage.haskell.org/package/criterion}}
-was used.
+I used the benchmarking library \verb!criterion!\footnote{
+\url{http://http://hackage.haskell.org/package/criterion}}.
 By running the benchmarks many times,
 it can accurately measure even very short running times.
 The program was compiled by GHC 7.8.3 with optimizations enabled (\verb!-O2!).
@@ -1152,7 +1158,7 @@ Program & All results computed? & DFS & BFS \\
 Peano subtraction & all results & 78\,ms & 72\,ms \\
 Peano division & all results & 110\,ms & 110\,ms \\
 Last & all results & 2.3\,ms & 2.2\,ms \\
-Permutation sort & all results & 3.9\,ms s & 4.0\,ms \\
+Permutation sort & all results & 3.9\,ms & 4.0\,ms \\
 \hline
 |Nat| subtraction & only the first one & 38\,ms & 39\,ms \\
 |Nat| multiplication & only the first one & 0.28\,ms & 58\,ms
@@ -1175,4 +1181,4 @@ BFS has the theoretical disadvantage of worse space complexity than DFS.
 But in the examples I tested, this did not seem to be a problem.
 On the other hand, it has the advantage of
 finding all solutions even in infinitely deep trees.
-Hence it seems to be preferable as a default search strategy.
+Therefore, it seems to be preferable as a default search strategy.

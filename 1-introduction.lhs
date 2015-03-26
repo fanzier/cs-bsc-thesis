@@ -18,7 +18,7 @@ constraint solving,
 and nondeterministic search for solutions.
 
 The declarative programming language \emph{Curry} \cite{curry} aims
-to combine the most important features of both paradigms in one language.
+to combine the central features of both paradigms in one language.
 Curry is based on (a subset of) Haskell
 but integrates logic variables and nondeterministic search.
 This functional-logic language is well-known, actively researched
@@ -65,7 +65,7 @@ that the types match up,
 thus catching potential bugs at compile time.
 Evaluation of terms is delayed by default
 until the value is needed,
-which allows for example the use of infinite data structures.
+enabling, for example, the use of infinite data structures.
 
 \subsection{Functions}
 
@@ -98,8 +98,8 @@ One can now use |min 0 :: Int -> Int| as a cut-off function
 that returns its argument if it is negative and otherwise returns 0.
 
 Functions can also take other functions as their arguments.
-In this case, they are called \emph{higher order functions}.
-An example is the following.
+In this case, they are called \emph{higher-order functions}.
+The following definition is an example.
 > applyTwice :: (Int -> Int) -> Int -> Int
 > applyTwice f x = f (f x)
 Applying this function to |double| results in a new function
@@ -116,7 +116,7 @@ It should work for any type.
 Indeed, Haskell allows us to write the following more general definition.
 > applyTwice :: (a -> a) -> a -> a
 Here, |a| is a type variable and can be instantiated with any type.
-For example, when using this function with |double|,
+When using this function with |double| as the argument,
 |a| will be instantiated to the type |Int|
 in order to match the type of |double|.
 
@@ -141,10 +141,10 @@ Hence, one can write |applyTwice| by composing the given function with itself.
 Non-primitive data types in Haskell
 take the form of \emph{algebraic data types (ADTs)}.
 They are defined by giving a name to the new type
-and listing all constructors for that type,
+and listing all its constructors,
 separated by vertical bars.
-Each constructor has a name and takes a number of arguments,
-the types of which have to be specified.
+Each constructor has a name and takes zero or more arguments,
+whose types have to be specified.
 > data Bool = False | True
 > data IntTree = Leaf Int | Node IntTree IntTree
 The first data type has two nullary constructors,
@@ -153,14 +153,14 @@ These constitute its only values.
 The second data type specifies a binary tree
 whose leafs are annotated with an integer.
 Its values include, for instance, |Leaf 0|
-or |Node (Leaf 10) (Node (Leaf 7) (Leaf 2))|.
+and |Node (Leaf 10) (Node (Leaf 7) (Leaf 2))|.
 
 Data types can also be polymorphic.
 To this end, type variables can be added after the name of the ADT
 and the types on the right-hand side can use them.
 > data Tree a = Leaf a | Node (Tree a) (Tree a)
 Using this definition, |Tree Int| is equivalent to |IntTree| from above.
-Singly-linked lists are also represented as ADTs:
+Singly-linked lists can also be represented as ADTs:
 > data List a = Nil | Cons a (List a)
 Here, |Nil| represents the empty list
 and |Cons| prepends one element to another list.
@@ -173,9 +173,9 @@ there is special syntax for lists:
 \subsection{Pattern Matching}
 
 Constructors of algebraic data types give a way to create values of ADTs.
-How can one find out which constructor a value was built with
-and what its arguments are?
-This is done by pattern matching.
+Conversely, pattern matching is used to find out
+which constructor a value was built with
+and what its arguments are.
 In the simplest form,
 this is achieved with a |case| expression.
 > map :: (a -> b) -> List a -> List b
@@ -183,7 +183,7 @@ this is achieved with a |case| expression.
 >   Nil          -> Nil
 >   Cons x rest  -> Cons (f x) (map f rest)
 The function |map| applies a function to every element of a list.
-It inspects the list by |case| splitting over its value.
+It inspects the list by matching it against all possible constructors.
 If it is the empty list |Nil|,
 the result is also |Nil|.
 If it begins with an element |x|,
@@ -214,7 +214,7 @@ It defines |zeros|, an infinite list of zeros,
 and |take|, a function returning the first elements of a list,
 which can be used like this.
 > take 2 (Cons 1 (Cons 2 (Cons 3 Nil))) == Cons 1 (Cons 2 Nil)
-But even an expression like |take 2 zeros| terminates in finite time
+But even an expression like |take 2 zeros| is evaluated in finite time
 and works as desired because of lazy evaluation.
 > take 2 zeros
 > == take 2 (Cons 0 zeros)
@@ -223,13 +223,13 @@ and works as desired because of lazy evaluation.
 > == Cons 0 (Cons 0 Nil)
 Since |take| does not require the value of |zeros| in the last step
 because |take 0| does not pattern match on the list,
-therefore |zeros| is not evaluated further
-and the program does not run into an infinite loop.
+therefore |zeros| is not evaluated further,
+thus avoiding an infinite loop.
 
 \section{Curry}
 
 Curry is almost a superset of Haskell
-but also incorporates nondeterministic functions and free variables.
+but also incorporates nondeterministic functions and logic variables.
 As an example,
 the following choice function can return any of its two arguments.
 > choose x y = x
@@ -256,9 +256,9 @@ Moreover, |permute| uses this function to insert the first element
 in the recursively permuted rest.
 Thus it nondeterministically computes all permutations of a list.
 
-Another new feature Curry offers are logic variables.
-These are variables that are not assigned a value
-but instead are declared with the keyword |free|.
+Another feature of Curry are logic variables.
+Such variables are not assigned a value
+but are instead declared with the keyword |free|.
 The interpreter then searches for suitable assignments
 that satisfy the given constraints.
 
@@ -387,15 +387,14 @@ that the function is deterministic.
 On the other hand, |last| uses |unknown| internally,
 so it must have set type.
 The code also demonstrates some other differences from \cumin{}, such as
-mandatory lambda abstractions instead of function argument notation and
-missing |let| bindings.
+mandatory lambda abstractions instead of function argument notation.
 
 \section{Overview and Goals of the Thesis}
 
 Why do we concern ourselves with all these languages?
 As said before, Haskell was discussed
 because it is the basis for all the other languages
-we are concerned with.
+that this thesis deals with.
 Curry is included in the introduction
 since it is one of the most well-known functional-logic languages.
 
@@ -408,12 +407,12 @@ and \salt{} is a means of better understanding nondeterminism in \cumin{}.
 The two languages did not have an implementation before,
 so the first goal is to implement a semantics.
 There are two different kinds of semantics,
-namely a \emph{denotational} or an \emph{operational} semantics.
+namely a \emph{denotational} and an \emph{operational} semantics.
 The former gives a mathematical meaning to programs,
 the latter describes a program's execution more directly.
 As part of this thesis, I implemented an operational semantics (chapter 3)
-for a variant of \cumin{} that is more general than in \cite{orig},
-for instance, it supports general algebraic data types.
+for a variant of \cumin{} that is more general than in \cite{orig}.
+For instance, it supports general algebraic data types.
 At the same time, Fabian Thorand developed an implementation of
 a denotational semantics for both \cumin{} and \salt{},
 as part of his bachelor thesis.
@@ -421,10 +420,9 @@ This way, we were able to test
 whether the operational and denotational semantics
 are consistent with each other.
 Additionally, the authors of \cite{orig} claim that the semantics of \cumin{}
-captures the behavior of real Curry implementations,
-\ie Curry programs that can be expressed in \cumin{}
-should behave the same.
-%TODO: maybe change last sentence?
+is compatible with real Curry implementations,
+\ie Curry programs expressed in \cumin{}
+should exhibit an equivalent behavior.
 
 Moreover, \cumin{} programs can be translated to \salt{}.
 I implemented this translation, adapted from \cite{orig},

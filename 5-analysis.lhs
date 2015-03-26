@@ -27,7 +27,7 @@ It is a singleton set containing a function returning a singleton set,
 so the original \cumin{} function |id| is completely deterministic.
 
 In general, determining whether a function is deterministic is undecidable.
-This can be proved by reduction from the halting problem.\footnote{
+This can be proven by reduction from the halting problem.\footnote{
 As \salt{} includes a simply-typed lambda calculus
 and allows unrestricted recursion, it is Turing complete.}
 Consider the following \salt{} expression.
@@ -36,14 +36,14 @@ This is deterministic if and only if always the first branch is evaluated.
 However, we cannot decide whether |condition| is always |True|
 since it is even undecidable whether its evaluation terminates at all.
 So any method of detecting determinism will not be complete.
-However, one can usually go quite far with purely syntactic transformations,
+However, one can usually accomplish a lot with purely syntactic transformations,
 as I will describe below.
 
 In what follows, I will not always strictly adhere to the \salt{} syntax
 in order to keep the code readable.
 For example, I will omit type instantiations if they are clear from the context
 and I will allow additional infix operators to be defined.
-Also, I will sometimes write
+Moreover, I will sometimes write
 \salt{} function definitions in an equational style
 instead of using explicit lambda abstractions.
 
@@ -118,10 +118,10 @@ Another concept to discuss is \emph{strictness}.
 A \salt{} function |f :: tau' -> tau| is called strict
 if |f failed<:tau':>! ~= failed<:tau:>!|.
 Intuitively, this means that |f| evaluates its argument,
-for example using a case expression.
+for example, using a case expression.
 Some transformations in the following only work for strict functions.
 The functions |set|, |(f .)| and |sMap f| are strict
-if |f| is, according to the semantics from \cite{orig}.
+if |f| is strict, according to the semantics from \cite{orig}.
 
 \section{Determinism}
 
@@ -138,8 +138,8 @@ Note that according to the semantics from \cite{orig},
 Hence, a failed computation can also be regarded as a singleton set.
 
 Transferring this to the operational semantics,
-it means that there is at most one successful evaluation for |e|,
-in particular, the evaluation of |e| is allowed to fail.
+it means that there is at most one successful evaluation for |e|.
+In particular, the evaluation of |e| is allowed to fail.
 A sufficient (not necessary) condition for at most one evaluation
 is that the Guess rule from the operational semantics is never used.
 This is essentially what we will try to show
@@ -151,7 +151,7 @@ uses the Guess rule due to logic variables,
 but the expression still has only one result: |True|.
 
 How can one derive that an expression is deterministic without evaluating it?
-It can often be done by inlining top-level functions
+It can often be achieved by inlining top-level functions
 (replacing them by the right-hand side of their definition)
 and applying the monad laws for sets.
 
@@ -159,19 +159,19 @@ For instance, consider the \cumin{} expression |double (double 1)|.
 To show that it is deterministic,
 one translates the expression to \salt{},
 simplifies the result
-and inlines functions to apply more monad laws.
+and inlines functions to apply monad laws.
 > trans (double (double 1))
-> ~= -- translation and simplification:
+> ~= -- translation and simplification
 > double >>= \f -> (double >>= \g -> g 1) >>= f
-> ~= -- inlining |double|:
+> ~= -- inlining |double|
 > {\x -> {x + x}} >>= \f -> ({\x -> {x + x}} >>= \g -> g 1) >>= f
-> ~= -- first monad law:
+> ~= -- first monad law
 > {\x -> {x + x}} >>= \f -> ((\x -> {x + x}) 1) >>= f
 > ~= -- $\beta$-reduction
 > {\x -> {x + x}} >>= \f -> { 1 + 1 } >>= f
-> ~= -- first monad law and $\beta$-reduction:
+> ~= -- first monad law and $\beta$-reduction
 > { 1 + 1 } >>= \x -> { x + x }
-> ~= -- first monad law and $\beta$-reduction:
+> ~= -- first monad law and $\beta$-reduction
 > { (1 + 1) + (1 + 1) }
 This is a singleton set,
 so the original expression is deterministic.
@@ -180,7 +180,7 @@ to recognize that.
 
 As another example, consider the \cumin{} expression |guard<:Nat:> cond 1|
 where |cond| is some deterministic expression
-and the function |guard| returns its second argument
+and the |guard| function returns its second argument
 if and only if the first argument is |True|:
 > guard :: forall a. Bool -> a -> a
 > guard cond x = case cond of { True -> x; False -> failed<:a:> }
@@ -239,7 +239,7 @@ that there is at most one successful evaluation
 when applying |f| to any deterministic expression of type |tau_1|.
 
 Although the methods are the same as for deterministic expressions,
-let us look at how functions can be proved deterministic.
+let us look at how functions can be proven deterministic.
 Consider the \cumin{} function |double| as an example.
 One can see that in this case, a witness is given by |\x :: Nat -> x + x|.
 > trans double
@@ -258,7 +258,7 @@ if there is a \salt{} function |f' :: Set (tytrans tau_1 -> tytrans tau_2)|
 such that |trans f ~= sMap (\g -> set . g) f'|.
 Again, such an |f'| is called a \emph{witness}.
 
-Intuitively, this means that the set braces on the inner level of
+Intuitively, this means that the set on the inner level of
 |trans f :: Set (tytrans tau_1 -> Set (tytrans tau_2))|
 are actually unnecessary,
 \ie |trans f| represents a set of functions returning singleton sets.
@@ -320,7 +320,7 @@ Inlining |id| and |double|, followed by simplifications with monad laws, yields:
 > sMap (set .)
 >   (unknown<:Bool:> >>= \c -> case c of { True -> { \x -> x }; False -> { \x -> x + x } })
 For the case rule, we used that |sMap (set .)| is strict,
-which follows from the semantics in \cite{orig}.
+which follows from the semantics in~\cite{orig}.
 The witness |unknown<:Bool:> >>= \c -> case c of { .. }|
 represents the set $\{ |\x -> x|, |\x -> x + x| \}$
 of two deterministic functions.
@@ -355,9 +355,11 @@ To justify this transformation, consider the following more general scenario.
 We have a recursive, set-typed function definition |f|.
 > f :: Set tau
 > f = e
-This can be rewritten as |f = g f|
+The definition of |f| can be rewritten as |f = g f|
 for some non-recursive function |g :: Set tau -> Set tau|,
-namely |g := \x -> e[x/f]| where |x| is a fresh variable.
+namely |g := \x -> e'|
+where |x| is a fresh variable
+and |e'| is the expression |e| with every occurrence of |f| replaced by |x|.
 Moreover, suppose we know that |g . h ~= h . g'|
 for some |g' :: tau' -> tau'| and |h :: tau' -> Set tau|
 where |h| is \emph{strict},
@@ -398,18 +400,18 @@ Furthermore one can show the following.
 So choosing |g' = Cons<:Nat:> 1| and |h = set|
 allows exactly the transformation we did above.
 The required strictness of |set|
-is a consequence of the semantics in \cite{orig}.
+is a consequence of the semantics in~\cite{orig}.
 
 Let us consider another example: the |length| function in \cumin{}.
 > length :: forall a. List a -> Nat
 > length list = case list of
->   Nil -> 0
->   Cons x xs -> 1 + length<:a:> xs
+>   Nil        -> 0
+>   Cons x xs  -> 1 + length<:a:> xs
 Translating it to \salt{} yields the following function, after simplification.
 > length :: forall a. Set (List a -> Set Nat)
 > length = {\list :: List a -> case list of
->   Nil -> { 0 }
->   Cons x xs -> length<:a:> >>= \f ->
+>   Nil        -> { 0 }
+>   Cons x xs  -> length<:a:> >>= \f ->
 >     f xs >>= \l -> { 1 + l}}
 One can \enquote{factor out} a non-recursive function |g| again.
 > length :: forall a. Set (List a -> Set Nat)
@@ -417,48 +419,48 @@ One can \enquote{factor out} a non-recursive function |g| again.
 >
 > g :: forall a. Set (List a -> Set Nat) -> Set (List a -> Set Nat)
 > g = \length' -> {\list :: List a -> case list of
->   Nil -> { 0 }
->   Cons x xs -> length' >>= \f ->
+>   Nil        -> { 0 }
+>   Cons x xs  -> length' >>= \f ->
 >     f xs >>= \l -> { 1 + l}}
 As before, one can show an \enquote{extraction property} of |g|:
 > g . (set . (set .))
 > ~= -- definition of |(.)|, $\beta$-reduction
 > \length' :: (List a -> Nat) ->
 > {\list :: List a -> case list of
->   Nil -> { 0 }
->   Cons x xs -> {set . length'} >>= \f ->
+>   Nil        -> { 0 }
+>   Cons x xs  -> {set . length'} >>= \f ->
 >     f xs >>= \l -> { 1 + l}}
 > ~= -- first monad law
 > \length' :: (List a -> Nat) ->
 > {\list :: List a -> case list of
->   Nil -> { 0 }
->   Cons x xs -> {length' xs} >>= \l -> { 1 + l}}
+>   Nil        -> { 0 }
+>   Cons x xs  -> {length' xs} >>= \l -> { 1 + l}}
 > ~= -- first monad law
 > \length' :: (List a -> Nat) ->
 > {\list :: List a -> case list of
->   Nil -> { 0 }
->   Cons x xs -> { 1 + length' xs}}
+>   Nil        -> { 0 }
+>   Cons x xs  -> { 1 + length' xs}}
 > ~= -- case rule
 > \length' :: (List a -> Nat) ->
 > {\list :: List a -> {case list of
->   Nil -> 0
->   Cons x xs -> 1 + length' xs } }
+>   Nil        -> 0
+>   Cons x xs  -> 1 + length' xs } }
 > ~= -- rewrite with combinators
 > (set . (set .)) . (\length' :: (List a -> Nat) ->
 > \list :: List a -> case list of
->   Nil -> 0
->   Cons x xs -> 1 + length' xs)
-> ~= -- choosing |g'| suitably
+>   Nil        -> 0
+>   Cons x xs  -> 1 + length' xs)
+> ~= -- choosing |g' := \length'  :: (List a -> Nat) -> ..|
 > (set . (set .)) . g'
 Using fixed point fusion with |h = set . (set .)| and |g'|,
 we can equivalently define |length = { set . length'}|
 with |length' = g' length'|.
-Again, the strictness of |h| follows from the semantics in \cite{orig}.
+Again, the strictness of |h| follows from the semantics in~\cite{orig}.
 Inlining |g'| yields:
 > length' :: List a -> Nat
 > length' = \list :: List a -> case list of
->   Nil -> 0
->   Cons x xs -> 1 + length' xs
+>   Nil        -> 0
+>   Cons x xs  -> 1 + length' xs
 >
 > length :: Set (List a -> Set Nat)
 > length = { \list :: List a -> { length' list } }
@@ -468,29 +470,30 @@ Furthermore, this is the optimal way of writing |length|
 and it was derived from the original translation
 using only well-specified program transformations.
 
-So far, we only considered directly recursive functions.
-But the transformation can easily be adapted
-to mutually recursive functions.
-For instance, say there are to functions |f| and |g|,
+So far, only directly recursive functions were discussed.
+But the transformation can be adapted
+to deal with mutually recursive functions.
+For instance, say there are two functions |f| and |g|,
 recursively calling each other.
 Then one creates two new functions |f'| and |g'|
-that are mutually recursive.
-This works the same for three functions etc.
+that have fewer sets and are mutually recursive,
+and defines |f| and |g| as \enquote{singleton wrappers} for |f'| and |g'|.
+However, the details are beyond the scope of this thesis.
 
 \section{Limitations and Related Work}
 
 While I have presented methods to analyze lots of functions,
 including recursive ones,
-I have not talked about functions with higher order arguments,
+I have not discussed functions with higher-order arguments,
 like |map|.
 Whether such a function is deterministic can depend on
-whether its higher order argument is deterministic or not.
+whether its higher-order argument is deterministic or not.
 So this has to be decided at the call site.
 Inlining can often solve this problem,
 but in case of recursive functions,
 it does not help.
 
-There are other ways to analyze nondeterminism
+There are other ways of analyzing nondeterminism
 that do not rely on syntactic transformations.
 For instance, a type and effect system can be used
 to track the nondeterminism in the program.

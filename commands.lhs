@@ -1,6 +1,6 @@
 \newcommand{\cumin}[0]{CuMin}
 \newcommand{\salt}[0]{SaLT}
-\newcommand{\cf}[0]{c.f.\ }
+\newcommand{\cf}[0]{cf.\ }
 \newcommand{\ie}[0]{i.e.\ }
 \newcommand{\eg}[0]{e.g.\ }
 \newcommand{\wrt}[0]{w.r.t.\ }

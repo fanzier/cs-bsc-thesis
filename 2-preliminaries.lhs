@@ -48,17 +48,17 @@ Oftentimes, these judgments will only make sense in a certain \emph{context},
 denoted~|Gamma|.
 The judgment is then written with the turnstile symbol:
 $\Gamma \vdash \text{judgment}$.
-More details on the presentation of typing systems
+More details on the presentation of type systems
 can be found in \cite{typing-systems}.
 
 \section{Types in \cumin{} and \salt{}}
 
 Types can either be a type variable
-or a type constructor applied to a number of types,
-which must always be fully applied.
-A type constructor is one of the following.
+or a type constructor applied to zero or more types,
+whose number must match the arity of the type constructor.
+The following list contains all valid type constructors.
 \begin{itemize}
-\item The name of an algebraic data type.
+\item The name of an algebraic data type. Its arity is the number of type parameters in the definition.
 \item The function type constructor |->|, with two arguments.
 It associates to the right.
 \item |Nat|, a primitive type for natural numbers.
@@ -73,8 +73,8 @@ These are the allowed contexts in typing judgments.
 The above description of types can then be
 formalized and is shown in \cref{types}.
 
-Typing judgments are always with respect to a given program $P$.
-After all, typing judgments can depends on the ADTs defined in $P$ and,
+Typing judgments are always made with respect to a given program $P$.
+After all, they can depend on the ADTs defined in $P$ and,
 as we will see later,
 on the function definitions in $P$, too.
 Because of that, we would theoretically have to index all typing judgments
@@ -138,14 +138,14 @@ However, we omit the index for the sake of readability.
 \hrulefill
 \end{figure}
 
-While there are only three built built in algebraic data types in \cite{orig},
+While there are only three built-in algebraic data types in \cite{orig},
 namely lists, pairs and booleans,
 we considered this to be too limiting
 and decided to augment the languages with general ADTs.
 Such an algebraic data type is defined like it is in Haskell.
 It has a name |A|,
 is parameterized by zero or more type variables |vec alpha_l|,
-has one or more constructors |C_m|,
+has one or more constructors |vec C_m|,
 each of which is specified by its name and its argument types |vec tau_mn|.
 > data A alpha_1 .. alpha_l = C_1 tau_11 .. tau_1n | .. | C_m tau_m1 .. tau_mn
 According to the above conventions,
@@ -156,13 +156,13 @@ The only type variables allowed in the types |vec tau_mn| are |vec alpha_l|.
 Higher-kinded type variables are not supported,
 which means that a type variable cannot be applied to other types.
 As a consequence, the following data type is invalid in \cumin{} and \salt{}
-although it is fine in Haskell.
+although it is permitted in Haskell.
 > data D f a = D (f a)
 
 Logic variables in \cumin{} and the |unknown| primitive in \salt{}
-cannot have any arbitrary type;
-only so called |Data| types are allowed.
-This is because values of logic variables have to be able to be enumerated.
+cannot have an arbitrary type;
+only so called |Data| types are permitted.
+This is because values of logic variables have to be enumerable.
 As a counterexample, values of function types
 do not have a natural structure for enumeration.
 Most algebraic data  types, however, are structurally enumerable,
@@ -171,7 +171,7 @@ for instance |Bool|, |Nat|,
 They can be enumerated because all constructors can be listed
 and their arguments are enumerable.
 
-To formalize this notion,
+In order to formalize this notion,
 we introduce another judgment |dataIdx A I|
 for an ADT |A| with |l| type parameters
 where |I| has to be a subset of $\{1,\dots,l\}$.
@@ -181,7 +181,7 @@ Essentially, an ADT is a |Data| type
 if the types of the arguments of all constructors are |Data| types.
 The rules in \cref{data-types} capture this notion.
 Note that this is another deviation from \cite{orig},
-which only has to specify simple rules for the three built-in ADTs.
+which only specifies simple rules for the three built-in ADTs.
 As we allow general algebraic data types,
 these more intricate rules are necessary.
 
@@ -283,12 +283,13 @@ The shape of \cumin{} expressions is shown in \cref{cumin-exp}.
 As might be expected,
 the syntax includes variables and literals for natural numbers.
 Polymorphic functions and constructors
-have to be given type instantiations at the call site.
+have to be given type instantiations at the call site,
+denoted by subscripts.
 In principle, these could be inferred automatically,
 but this complicates type checking.
 For the sake of simplicity, these annotations are mandatory.
 Function application is written by juxtaposition,
-it associates to the left and has highest binding precedence.
+it associates to the left and has the highest binding precedence.
 The supported primitive operations are addition for natural numbers
 and equality checks for |Data| types, in particular natural numbers.
 Comparison for equality requires a certain structure on the values,
@@ -303,11 +304,11 @@ Let bindings allow
 using the result of a computation more than once in an expression
 by binding it to a variable |x|.
 Recursive let bindings are not allowed, \ie |x| must not occur in |e_1|.
-The construct |let .. free| introduces logic variables,
+The construct |let .. free| introduces logic variables;
 it is the only logic feature in the language.
 Case expressions examine the value of an expression,
 called the \emph{scrutinee}.
-The value is matched with the constructor patterns |C_i x_i_j|.
+Its value is matched with the constructor patterns |C_i x_i_j|.
 The constructors |C_i| that are matched on must be pairwise different
 and there must be at least one constructor pattern.
 There may or may not be a catch-all variable pattern |x| at the end.
@@ -316,7 +317,7 @@ It only matches if none of the constructors before did.
 We modified the \cumin{} syntax from \cite{orig} in the following points.
 It was already mentioned that we allow general ADTs.
 As a consequence,
-the syntax for constructors and case expressions has to be generalized, as well.
+the syntax for constructors and case expressions has to be generalized as well.
 Additionally, we lift the requirement
 that constructors have to be fully applied.
 Moreover, the type class context in function signatures
@@ -327,10 +328,10 @@ Another discrepancy are case expressions.
 While the original syntax expects one pattern for each constructor,
 we permit a catch-all variable pattern at the end
 and do not require every constructor to be matched.
-Furthermore, the primitive |anything<:tau:>| from \cite{orig}
+Furthermore, the primitive $\textbf{\text{anything}}$|<:tau:>!| from \cite{orig}
 (corresponding to |let x :: tau free in x|)
 is removed in favor of the |let .. free| construct.
-Finally, the keyword |failure| is renamed to |failed|.
+Finally, the keyword $\textbf{\text{failure}}$ is renamed to |failed|.
 
 Besides the mathematical notation,
 there is also a plain-text representation of \cumin{} code.
@@ -359,8 +360,8 @@ instead of braces and semicolons:
 There are some data types and functions that are so common and useful
 that we decided to put them in a so-called \emph{prelude},
 which is copied to the top of every program.
-It defines data types like lists and boolean types
-and functions that handle them.
+It defines data types like lists and booleans,
+as well as functions that operate on them.
 The precise definitions of the prelude are listed in \cref{cumin-prelude}.
 
 \begin{figure}[t]
@@ -378,6 +379,7 @@ The precise definitions of the prelude are listed in \cref{cumin-prelude}.
 > flip :: forall a b c. (a -> b -> c) -> b -> a -> c
 > foldr :: forall a b. (a -> b -> b) -> b -> List a -> b
 > fst :: forall a b. Pair a b -> a
+> guard :: forall a. Bool -> a -> a
 > id :: forall a. a -> a
 > length :: forall a. List a -> Nat
 > map :: forall a b. (a -> b) -> List a -> List b
@@ -392,8 +394,8 @@ The precise definitions of the prelude are listed in \cref{cumin-prelude}.
 
 Finally, there is some syntactic sugar
 to make programs easier to read and write.
-List literals can be written in the natural way |[e_1, .., e_n]<:tau:>|$\!\!\!$.
-This is desugared to the expression
+List literals can be written in the natural way |[e_1, .., e_n]<:tau:>!|,
+which is desugared to the expression
 |Cons<:tau:> e_1 (.. (Cons<:tau:> e_n Nil<:tau:>) ..)|.
 
 \subsection{Typing}
@@ -407,7 +409,7 @@ but take our modifications and generalizations of the language into account.
 Another deviation from the original paper,
 which is does not affect the syntax, can be seen, as well.
 While the original paper restricts equality checks to natural numbers,
-we allow general |Data| types.
+we allow all |Data| types.
 \begin{figure}[t]
 \begin{gather*}
 \AxiomC{|Gamma, x :: tau ||- x :: tau|}
@@ -479,7 +481,7 @@ if the following judgment holds.
 \AxiomC{|vec alpha_m, vec (isData alpha_i_j), vec (x_n :: tau_n) ||- e :: tau|}
 \DisplayProof
 \]
-A \cumin{} program is well-typed if each of its functions is well-typed.
+A \cumin{} program is well-typed if each of its ADTs and functions is well-typed.
 
 \subsection{Examples}
 
@@ -537,12 +539,13 @@ The missing subderivations look like this.
 \end{prooftree}
 
 \section{\salt{} Syntax and Typing}
+\label{sec:salt}
 
 The syntax of \salt{} is quite similar to \cumin{} (\cref{salt-exp}).
 However, it replaces the |let .. free| construct
-with the keyword |unknown<:tau:>|,
-which represents the set of values of the type |tau|.
-For this, |tau| has to be a |Data| type.
+with the keyword |unknown<:tau:>!|,
+which represents the set of values of the type |tau|,
+which has to be a |Data| type.
 As mentioned in the introduction,
 other primitives for sets are
 |set| for creating singleton sets
@@ -597,28 +600,23 @@ Mathematical notation & plain text \\
 \hrulefill
 \end{figure}
 
-For \salt{}, we also created a prelude with common definitions.
+As for \cumin{}, we created a \salt{} prelude with useful definitions.
 It is mainly a manual translation of the \cumin{} prelude.
-There are only three differences.
-> choose :: forall a. a -> a -> Set a
+There are only two changes.
+> choose :: forall a. Set a -> Set a -> Set a
 > sMap :: forall a b. (a -> b) -> Set a -> Set b
-> guard :: forall a. Bool -> a -> a
-To construct a set with two element, there is |choose|.
-It puts its two arguments in a set.
+The \salt{} version of |choose| operates on sets
+by forming their union.
 There is also a new function |sMap|
 which acts on sets like |map| acts on lists.
 It yields a set where the given function has been applied
 to every element of the original one.
-The last function can be used in an expression
-like |guard cond e|.
-It will yield the result of |e| only if |cond| is true
-and fail otherwise.
 
 There is also an alternative prelude that is generated
 by the translation method described in chapter 4.
 It behaves the same but due to the nature of the translation,
 its functions contain more sets than necessary, for example,
-|choose| is translated to |choose :: Set (a -> Set (a -> Set a))|.
+|id| is translated to |id :: forall a. Set (a -> Set a)|.
 
 The \salt{} typing rules are similar to those of \cumin{}.
 The ones for let bindings are now unnecessary.
@@ -656,13 +654,13 @@ if the following judgment is correct.
 
 Having specified the \salt{} syntax and typing rules,
 let us take a look at some examples.
-It is instructive to translate the \cumin{} programs above to \salt{}.
-> choose :: forall a. a -> a -> Set a
-> choose = \x :: a -> \y :: a -> unknown<:Bool:> >>= \c :: Bool ->
->   case c of
->     True -> set x
->     False -> set y
->
+It is instructive to translate the above \cumin{} programs to \salt{}.
+> choose :: forall a. Set a -> Set a -> Set a
+> choose = \x :: Set a -> \y :: Set a -> unknown<:Bool:> >>= \c :: Bool ->
+>   case c of 
+>     True -> x
+>     False -> y
+
 > map :: forall a b. (a -> b) -> List a -> List b
 > map = \f :: (a -> b) -> \xs :: List a -> case xs of
 >   Nil        -> Nil<:b:>
@@ -683,8 +681,8 @@ Let |Gamma := a, x :: a, y :: a| and |Gamma' := Gamma, c :: Bool|.
 \UnaryInfC{|a ||- \x :: a -> \y :: a -> unknown<:Bool:> >>= \c :: Bool -> case c of { .. } :: a -> a -> Set a|}
 \end{prooftree}
 
-The proof of well-typedness of |map| is so similar to the one in \cumin{}
-that it can be safely left out.
+The proof of well-typedness of |map| very similar to the one in \cumin{},
+so it can be safely left out.
 Instead let us understand the function |sMap|.
 > sMap :: forall a b. (a -> b) -> Set a -> Set b
 > sMap = \f :: (a -> b) -> \xs :: Set a -> xs >>= \x :: a -> set (f x)
@@ -711,12 +709,12 @@ To check type correctness, let |Gamma := a, b, f :: a -> b, xs :: Set a|.
 
 \section{Implementation}
 
-Before implementing a semantics or translation for the two languages,
+Before implementing a semantics or translation method involving the two languages,
 some groundwork had to be done.
 \cumin{} and \salt{} programs have to be parsed
 into an \emph{abstract syntax tree (AST)}.
 A type checker for these ASTs is needed
-and also a pretty printer will be useful.
+and a pretty-printer will be useful as well.
 This functionality was implemented together with Fabian Thorand,
 whose bachelor thesis is also concerned with \cumin{} and \salt{}.
 
@@ -752,10 +750,10 @@ The representation of expressions is similarly given
 by introducing one constructor for each kind of expression
 from the previous sections.
 
-One notorious problem in compiler writing
+One notorious problem in writing compilers
 is the representation of bound variables.
 In our implementation, they are simply represented by their names.
-In general, this can cause a number of problems with substitution
+Generally, this can cause a number of problems with substitution
 because free variables may be captured:
 Consider the two lambda terms |\x -> y| and |\y -> z|.
 Blindly substituting the former term for |z|
@@ -768,7 +766,7 @@ but we opted against that complexity in the common packages
 since the kind of substitution needed for type checking,
 namely instantiating type variables on function invocations,
 can never lead to unwanted capturing.
-This is because type variable bindings are always on the top level,
+That is because type variable bindings are always on the top level,
 introduced by $\forall$, and cannot be nested.
 
 \subsection{Parser}
@@ -787,7 +785,7 @@ As we wanted indentation-sensitive parsing,
 we used the library \texttt{indentation} \cite{indentation},
 which builds on top of \texttt{trifecta}.
 Parser combinators are a very readable and concise way of defining parsers.
-For instance, the parser for lambda abstraction
+For instance, the parser for lambda abstractions
 \verb!\x :: t -> e! in \salt{} looks like this.
 (slightly modified for clarity)
 > lambdaE  =     ELam
@@ -839,7 +837,7 @@ Explaining monads properly is beyond the scope of this thesis, however.}
 The syntax tree can simply be checked from the bottom up,
 composing the types of smaller expressions to larger ones,
 according to the typing rules.
-No complicated inference is necessary
+No complicated inference is needed
 since the expressions have all the necessary type annotations
 to determine their type locally.
 (In contrast, a Haskell type inference would have to
@@ -847,7 +845,7 @@ take global constraints into account.)
 As soon as an inconsistency is found,
 a type error is reported.
 
-The only thing that deserves a special remark is inference of |Data| types.
+The only thing that deserves a special remark is the inference of |Data| types.
 The inference of the |dataIdx A I| judgments is done once,
 at the beginning of type checking and the result is stored.
 Closely following the typing rules
@@ -865,14 +863,14 @@ In each iteration, for each ADT |A|, and each constructor |C|,
 type variables in the argument type of |C| are added to this set.
 For argument types that are type constructors |D| applied to other types,
 we first check
-that the |D| is |Nat| or a |Data| type,
+that the |D| is a |Data| type,
 according to the current knowledge.
 If not, |A| itself cannot be a |Data| type.
 Otherwise, we require the types to which the |D| is applied
 to be |Data| types,
 but only those with an index in the constraint set $I_{|D|}$.
 
-In this way, more and more necessary |Data| constraints are accumulated
+In this way, more necessary |Data| constraints are accumulated
 until a fixed point is reached.
 Then, the constraints are also sufficient.
 Such a fixed point is reached
