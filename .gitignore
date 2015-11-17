@@ -12,6 +12,5 @@
 *.toc
 build/
 
-*.pdf
 *.tex
 *.kilepr
